@@ -25,5 +25,6 @@ public class MigrationNodeDO extends TenantBaseDO {
     private String description;
     private BigDecimal longitude;
     private BigDecimal latitude;
+    /** 显示顺序，数字越小越靠前 */
     private Integer sort;
 }

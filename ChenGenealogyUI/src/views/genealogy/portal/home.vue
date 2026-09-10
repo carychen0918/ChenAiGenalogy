@@ -80,9 +80,9 @@ const notices = ref<any[]>([])
 const cultures = ref<any[]>([])
 const config = ref<any>()
 const modules = [
+  { title: '谱书', desc: '在线翻阅 · 按辈按支', path: '/portal/book' },
   { title: '基础族谱', desc: '谱系树 · 成员档案', path: '/portal/tree' },
   { title: '寻根问祖', desc: '姓氏源流 · 迁徙 · 字辈', path: '/portal/roots' },
-  { title: 'AI 寻宗', desc: '对话分析是否同族', path: '/portal/ai-match' },
   { title: '清明祭祖', desc: '活动报名 · 坟地导航', path: '/portal/ancestor' }
 ]
 const format = (t: number) => (t ? new Date(t).toLocaleDateString() : '')

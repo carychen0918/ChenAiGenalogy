@@ -16,4 +16,15 @@ public interface MigrationNodeMapper extends BaseMapperX<MigrationNodeDO> {
                 .orderByAsc(MigrationNodeDO::getSort)
                 .orderByAsc(MigrationNodeDO::getId));
     }
+
+    default int selectMaxSort(Long familyId) {
+        List<MigrationNodeDO> list = selectList(new LambdaQueryWrapperX<MigrationNodeDO>()
+                .eq(MigrationNodeDO::getFamilyId, familyId)
+                .orderByDesc(MigrationNodeDO::getSort)
+                .last("LIMIT 1"));
+        if (list.isEmpty() || list.get(0).getSort() == null) {
+            return 0;
+        }
+        return list.get(0).getSort();
+    }
 }

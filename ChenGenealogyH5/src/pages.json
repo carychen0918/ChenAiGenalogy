@@ -1,0 +1,120 @@
+{
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": { "navigationBarTitleText": "陈氏族谱" }
+    },
+    {
+      "path": "pages/tree/tree",
+      "style": { "navigationBarTitleText": "族谱" }
+    },
+    {
+      "path": "pages/roots/roots",
+      "style": { "navigationBarTitleText": "寻根问祖" }
+    },
+    {
+      "path": "pages/ancestor/ancestor",
+      "style": { "navigationBarTitleText": "清明祭祖" }
+    },
+    {
+      "path": "pages/mine/mine",
+      "style": { "navigationBarTitleText": "我的" }
+    },
+    {
+      "path": "pages/login/login",
+      "style": { "navigationBarTitleText": "族人登录" }
+    },
+    {
+      "path": "pages/ai-match/ai-match",
+      "style": { "navigationBarTitleText": "AI 寻宗" }
+    },
+    {
+      "path": "pages/migration/migration",
+      "style": { "navigationBarTitleText": "姓氏源流与迁徙" }
+    },
+    {
+      "path": "pages/generation/generation",
+      "style": { "navigationBarTitleText": "字辈派语" }
+    },
+    {
+      "path": "pages/book/book",
+      "style": { "navigationBarTitleText": "谱书" }
+    },
+    {
+      "path": "pages/achievements/achievements",
+      "style": { "navigationBarTitleText": "祖先事迹" }
+    },
+    {
+      "path": "pages/member/member",
+      "style": { "navigationBarTitleText": "成员档案" }
+    },
+    {
+      "path": "pages/scholarship/scholarship",
+      "style": { "navigationBarTitleText": "学海无涯" }
+    },
+    {
+      "path": "pages/scholarship/apply",
+      "style": { "navigationBarTitleText": "资助申请" }
+    },
+    {
+      "path": "pages/scholarship/mine",
+      "style": { "navigationBarTitleText": "我的申请" }
+    },
+    {
+      "path": "pages/activity/activity",
+      "style": { "navigationBarTitleText": "祭祖活动" }
+    },
+    {
+      "path": "pages/nav/nav",
+      "style": { "navigationBarTitleText": "坟地导航" }
+    },
+    {
+      "path": "pages/feed/publish",
+      "style": { "navigationBarTitleText": "发布动态" }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "陈氏族谱",
+    "navigationBarBackgroundColor": "#fffdf7",
+    "backgroundColor": "#f6f1e6"
+  },
+  "tabBar": {
+    "color": "#8b8273",
+    "selectedColor": "#a63d2f",
+    "backgroundColor": "#fffdf7",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "static/tab/home.png",
+        "selectedIconPath": "static/tab/home-active.png"
+      },
+      {
+        "pagePath": "pages/tree/tree",
+        "text": "族谱",
+        "iconPath": "static/tab/tree.png",
+        "selectedIconPath": "static/tab/tree-active.png"
+      },
+      {
+        "pagePath": "pages/roots/roots",
+        "text": "寻根",
+        "iconPath": "static/tab/roots.png",
+        "selectedIconPath": "static/tab/roots-active.png"
+      },
+      {
+        "pagePath": "pages/ancestor/ancestor",
+        "text": "祭祖",
+        "iconPath": "static/tab/ancestor.png",
+        "selectedIconPath": "static/tab/ancestor-active.png"
+      },
+      {
+        "pagePath": "pages/mine/mine",
+        "text": "我的",
+        "iconPath": "static/tab/mine.png",
+        "selectedIconPath": "static/tab/mine-active.png"
+      }
+    ]
+  }
+}

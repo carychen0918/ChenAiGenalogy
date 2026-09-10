@@ -12,6 +12,7 @@
         <div class="links">
           <router-link to="/portal/home">首页</router-link>
           <router-link to="/portal/tree">族谱</router-link>
+          <router-link to="/portal/book">谱书</router-link>
           <router-link to="/portal/roots">寻根问祖</router-link>
           <router-link to="/portal/ai-match">AI寻宗</router-link>
           <router-link to="/portal/scholarship">学海无涯</router-link>

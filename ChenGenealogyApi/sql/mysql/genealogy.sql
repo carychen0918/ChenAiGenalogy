@@ -16,6 +16,9 @@ CREATE TABLE `tb_family` (
   `region` varchar(64) DEFAULT NULL COMMENT '所在地区',
   `intro` varchar(2000) DEFAULT NULL COMMENT '家族简介',
   `origin_content` mediumtext COMMENT '姓氏源流富文本',
+  `book_title` varchar(64) DEFAULT NULL COMMENT '谱书名称',
+  `book_revision` varchar(32) DEFAULT NULL COMMENT '重修记',
+  `book_preface` mediumtext COMMENT '谱书前言/谱序富文本',
   `patriarch_user_id` bigint DEFAULT NULL COMMENT '族长用户编号',
   `logo` varchar(512) DEFAULT NULL COMMENT 'Logo',
   `creator` varchar(64) DEFAULT '' COMMENT '创建者',
@@ -625,10 +628,12 @@ SELECT 206, `id`, '1', NOW(), '1', NOW(), b'0', 1 FROM `system_menu` WHERE `id` 
 
 -- ===================== 种子数据 =====================
 
-INSERT INTO `tb_family` (`id`, `name`, `surname`, `ancestor_name`, `ancestor_id`, `region`, `intro`, `origin_content`, `patriarch_user_id`, `tenant_id`, `creator`)
+INSERT INTO `tb_family` (`id`, `name`, `surname`, `ancestor_name`, `ancestor_id`, `region`, `intro`, `origin_content`, `book_title`, `book_revision`, `book_preface`, `patriarch_user_id`, `tenant_id`, `creator`)
 VALUES (1, '陈氏族谱', '陈', '陈公远', 1, '贵州 · 贵阳',
 '陈氏一支，明末自江西吉安迁入湖广，清康熙年间入黔，定居贵阳乌当，迄今三百余年，枝叶繁茂，人丁兴旺。始祖陈公远公，勤俭起家，以耕读传家，后世子孙遍布黔中及省内外，代有才俊。',
 '<p>陈氏出自妫姓，舜帝之后。本支始祖陈公远，清乾隆年间自遵义迁居贵阳乌当，披荆斩棘，拓荒立业。郡望颍川，堂号德星。</p>',
+'颍川陈氏族谱', '二〇二六年春重修',
+'<p>盖闻木有本而枝荣，水有源而流长。陈氏出自妫姓，舜帝之后，郡望颍川。本支始祖公远公，清乾隆年间自遵义迁居贵阳乌当，披荆斩棘，拓荒立业，耕读传家。</p><p>今据世系档案，按辈排纂，成此谱书，俾子孙开卷可知所出、所承、所传。是为序。</p>',
 1, 1, '1');
 
 INSERT INTO `tb_generation` (`id`, `family_id`, `generation_no`, `word`, `status`, `remark`, `sort`, `tenant_id`, `creator`) VALUES

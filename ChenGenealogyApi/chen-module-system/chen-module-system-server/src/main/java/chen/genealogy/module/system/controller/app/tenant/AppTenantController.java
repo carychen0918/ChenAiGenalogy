@@ -30,6 +30,16 @@ public class AppTenantController {
     @Resource
     private TenantService tenantService;
 
+    @GetMapping("/get-id-by-name")
+    @PermitAll
+    @TenantIgnore
+    @Operation(summary = "使用租户名，获得租户编号")
+    @Parameter(name = "name", description = "租户名", required = true, example = "芋道源码")
+    public CommonResult<Long> getTenantIdByName(@RequestParam("name") String name) {
+        TenantDO tenant = tenantService.getTenantByName(name);
+        return success(tenant != null ? tenant.getId() : null);
+    }
+
     @GetMapping("/get-by-website")
     @PermitAll
     @TenantIgnore

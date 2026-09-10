@@ -12,6 +12,9 @@ public class FamilySaveReqVO {
     private String region;
     private String intro;
     private String originContent;
+    private String bookTitle;
+    private String bookRevision;
+    private String bookPreface;
     private Long patriarchUserId;
     private String logo;
 }

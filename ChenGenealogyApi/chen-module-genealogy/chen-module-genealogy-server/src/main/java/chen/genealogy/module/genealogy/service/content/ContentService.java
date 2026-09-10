@@ -127,6 +127,9 @@ public class ContentService {
     public Long createMigration(MigrationNodeSaveReqVO reqVO) {
         MigrationNodeDO node = BeanUtils.toBean(reqVO, MigrationNodeDO.class);
         node.setFamilyId(FAMILY_ID);
+        if (node.getSort() == null) {
+            node.setSort(migrationNodeMapper.selectMaxSort(FAMILY_ID) + 1);
+        }
         migrationNodeMapper.insert(node);
         return node.getId();
     }

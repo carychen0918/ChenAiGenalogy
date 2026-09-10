@@ -1056,6 +1056,12 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: { hidden: true, canTo: true, title: '族谱树', noTagsView: true, requiresAuth: true }
       },
       {
+        path: 'book',
+        component: () => import('@/views/genealogy/portal/book.vue'),
+        name: 'PortalBook',
+        meta: { hidden: true, canTo: true, title: '谱书', noTagsView: true }
+      },
+      {
         path: 'member',
         component: () => import('@/views/genealogy/portal/member.vue'),
         name: 'PortalMember',

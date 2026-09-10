@@ -3,6 +3,7 @@ package chen.genealogy.module.genealogy.controller.admin.aimatch;
 import chen.genealogy.framework.common.pojo.CommonResult;
 import chen.genealogy.framework.tenant.core.aop.TenantIgnore;
 import chen.genealogy.module.genealogy.controller.admin.aimatch.vo.AiMatchChatReqVO;
+import chen.genealogy.module.genealogy.controller.admin.aimatch.vo.AiMatchChatRespVO;
 import chen.genealogy.module.genealogy.controller.admin.aimatch.vo.AiMatchConversationRespVO;
 import chen.genealogy.module.genealogy.controller.admin.aimatch.vo.AiMatchSessionRespVO;
 import chen.genealogy.module.genealogy.service.aimatch.AiMatchService;
@@ -79,6 +80,14 @@ public class AiMatchController {
             @RequestParam("id") @NotNull(message = "会话编号不能为空") Long id) {
         aiMatchService.deleteConversation(id);
         return success(true);
+    }
+
+    @PostMapping("/chat")
+    @PermitAll
+    @TenantIgnore
+    @Operation(summary = "寻宗对话（一次性返回，供小程序/H5 使用）")
+    public CommonResult<AiMatchChatRespVO> chat(@Valid @RequestBody AiMatchChatReqVO reqVO) {
+        return success(aiMatchService.chat(reqVO));
     }
 
     @PostMapping(value = "/chat-stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)

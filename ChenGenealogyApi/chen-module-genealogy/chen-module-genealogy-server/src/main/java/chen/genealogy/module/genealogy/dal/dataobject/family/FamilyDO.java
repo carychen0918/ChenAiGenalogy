@@ -22,6 +22,12 @@ public class FamilyDO extends TenantBaseDO {
     private String region;
     private String intro;
     private String originContent;
+    /** 谱书名称 */
+    private String bookTitle;
+    /** 重修记，如 2026年春重修 */
+    private String bookRevision;
+    /** 谱书前言 / 谱序富文本 */
+    private String bookPreface;
     private Long patriarchUserId;
     private String logo;
 }

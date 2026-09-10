@@ -124,7 +124,19 @@ public class AiMatchService {
         stringRedisTemplate.delete(SESSION_KEY + conv.getSessionId());
     }
 
+    public AiMatchChatRespVO chat(AiMatchChatReqVO reqVO) {
+        ChatContext ctx = prepareChat(reqVO);
+        return completeTurn(ctx.sessionId(), ctx.session(), ctx.model(), ctx.sanitized(), ctx.userTurn(), null);
+    }
+
     public SseEmitter chatStream(AiMatchChatReqVO reqVO) {
+        ChatContext ctx = prepareChat(reqVO);
+        SseEmitter emitter = new SseEmitter(120_000L);
+        executor.execute(() -> runChat(emitter, ctx.sessionId(), ctx.session(), ctx.model(), ctx.sanitized(), ctx.userTurn()));
+        return emitter;
+    }
+
+    private ChatContext prepareChat(AiMatchChatReqVO reqVO) {
         ensureEnabled();
         if (!isUuid(reqVO.getSessionId())) {
             throw exception(AI_MATCH_SESSION_INVALID);
@@ -149,14 +161,31 @@ public class AiMatchService {
         userTurn.setContent(sanitized);
         session.getMessages().add(userTurn);
         session.setUserCorpus(session.getUserCorpus() + "\n" + sanitized);
-
-        SseEmitter emitter = new SseEmitter(120_000L);
-        executor.execute(() -> runChat(emitter, reqVO.getSessionId(), session, model, sanitized, userTurn));
-        return emitter;
+        return new ChatContext(reqVO.getSessionId(), session, model, sanitized, userTurn);
     }
 
     private void runChat(SseEmitter emitter, String sessionId, SessionState session,
                          AiModuleChatModelLoader.ChatModelConfig model, String sanitized, ChatTurn userTurn) {
+        try {
+            completeTurn(sessionId, session, model, sanitized, userTurn, emitter);
+            emitter.complete();
+        } catch (Exception ex) {
+            log.warn("[ai-match] failed", ex);
+            try {
+                AiMatchChatRespVO err = new AiMatchChatRespVO();
+                err.setDone(true);
+                err.setContent("暂时无法完成分析，请稍后重试。");
+                send(emitter, err);
+                emitter.complete();
+            } catch (Exception ignored) {
+                emitter.completeWithError(ex);
+            }
+        }
+    }
+
+    private AiMatchChatRespVO completeTurn(String sessionId, SessionState session,
+                                           AiModuleChatModelLoader.ChatModelConfig model, String sanitized,
+                                           ChatTurn userTurn, SseEmitter emitter) {
         StringBuilder raw = new StringBuilder();
         StringBuilder visible = new StringBuilder();
         try {
@@ -169,11 +198,14 @@ public class AiMatchService {
             client.stream(model, OpenAiCompatibleClient.messages(system, history, user), delta -> {
                 raw.append(delta);
                 String vis = visibleContent(raw.toString());
-                if (vis.startsWith(visible.toString()) && vis.length() > visible.length()) {
+                if (emitter != null && vis.startsWith(visible.toString()) && vis.length() > visible.length()) {
                     String piece = vis.substring(visible.length());
                     visible.setLength(0);
                     visible.append(vis);
                     send(emitter, chunk(piece, false, null, List.of()));
+                } else {
+                    visible.setLength(0);
+                    visible.append(vis);
                 }
             });
             String reply = visibleContent(raw.toString());
@@ -204,19 +236,20 @@ public class AiMatchService {
             session.setLastScore(finalScore);
             persistTurn(session, userTurn, assistant);
             saveSession(sessionId, session);
-            send(emitter, chunk(extra, true, finalScore, contacts));
-            emitter.complete();
-        } catch (Exception ex) {
-            log.warn("[ai-match] failed", ex);
-            try {
-                AiMatchChatRespVO err = new AiMatchChatRespVO();
-                err.setDone(true);
-                err.setContent("暂时无法完成分析，请稍后重试。");
-                send(emitter, err);
-                emitter.complete();
-            } catch (Exception ignored) {
-                emitter.completeWithError(ex);
+            AiMatchChatRespVO done = chunk(reply + extra, true, finalScore, contacts);
+            if (emitter != null) {
+                send(emitter, chunk(extra, true, finalScore, contacts));
             }
+            return done;
+        } catch (Exception ex) {
+            if (emitter != null) {
+                throw (ex instanceof RuntimeException re) ? re : new IllegalStateException(ex);
+            }
+            log.warn("[ai-match] failed", ex);
+            AiMatchChatRespVO err = new AiMatchChatRespVO();
+            err.setDone(true);
+            err.setContent("暂时无法完成分析，请稍后重试。");
+            return err;
         }
     }
 
@@ -561,6 +594,11 @@ public class AiMatchService {
         } catch (Exception ex) {
             return false;
         }
+    }
+
+    private record ChatContext(String sessionId, SessionState session,
+                               AiModuleChatModelLoader.ChatModelConfig model,
+                               String sanitized, ChatTurn userTurn) {
     }
 
     @Data

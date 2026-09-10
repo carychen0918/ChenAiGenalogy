@@ -68,4 +68,6 @@ public interface ErrorCodeConstants {
     ErrorCode AI_MATCH_SESSION_INVALID = new ErrorCode(1_040_008_004, "会话无效，请刷新页面后重试");
     ErrorCode AI_MATCH_CONVERSATION_NOT_EXISTS = new ErrorCode(1_040_008_005, "寻宗会话不存在");
     ErrorCode AI_MATCH_GUEST_DAILY_LIMIT = new ErrorCode(1_040_008_006, "使用次数已达上限，请明天再试");
+
+    ErrorCode BOOK_PAGE_NOT_EXISTS = new ErrorCode(1_040_009_000, "谱书页码不存在");
 }

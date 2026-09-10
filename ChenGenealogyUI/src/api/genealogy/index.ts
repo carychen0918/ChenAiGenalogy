@@ -60,6 +60,12 @@ export const GenealogyContentApi = {
   saveTomb: (data: any) => request.put({ url: '/genealogy/content/tomb/save', data })
 }
 
+export const GenealogyBookApi = {
+  meta: () => request.get({ url: '/genealogy/book/meta' }),
+  page: (pageNo: number) => request.get({ url: '/genealogy/book/page', params: { pageNo } }),
+  search: (keyword: string) => request.get({ url: '/genealogy/book/search', params: { keyword } })
+}
+
 export const GenealogyScholarshipApi = {
   getConfig: (year?: number) => request.get({ url: '/genealogy/scholarship/config/get', params: { year } }),
   saveConfig: (data: any) => request.put({ url: '/genealogy/scholarship/config/save', data }),

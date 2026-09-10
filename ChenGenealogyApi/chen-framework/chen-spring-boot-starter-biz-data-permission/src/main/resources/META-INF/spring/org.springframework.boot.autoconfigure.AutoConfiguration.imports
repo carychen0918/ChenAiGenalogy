@@ -1,0 +1,3 @@
+chen.genealogy.framework.datapermission.config.ChenDataPermissionAutoConfiguration
+chen.genealogy.framework.datapermission.config.ChenDeptDataPermissionAutoConfiguration
+chen.genealogy.framework.datapermission.config.ChenDataPermissionRpcAutoConfiguration

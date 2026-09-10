@@ -1,0 +1,8 @@
+chen.genealogy.framework.apilog.config.ChenApiLogAutoConfiguration
+chen.genealogy.framework.jackson.config.ChenJacksonAutoConfiguration
+chen.genealogy.framework.swagger.config.ChenSwaggerAutoConfiguration
+chen.genealogy.framework.web.config.ChenWebAutoConfiguration
+chen.genealogy.framework.apilog.config.ChenApiLogRpcAutoConfiguration
+chen.genealogy.framework.xss.config.ChenXssAutoConfiguration
+chen.genealogy.framework.banner.config.ChenBannerAutoConfiguration
+chen.genealogy.framework.encrypt.config.ChenApiEncryptAutoConfiguration

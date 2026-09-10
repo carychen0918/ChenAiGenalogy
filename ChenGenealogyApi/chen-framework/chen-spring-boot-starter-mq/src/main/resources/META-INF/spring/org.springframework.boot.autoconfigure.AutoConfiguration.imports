@@ -1,0 +1,3 @@
+chen.genealogy.framework.mq.redis.config.ChenRedisMQProducerAutoConfiguration
+chen.genealogy.framework.mq.redis.config.ChenRedisMQConsumerAutoConfiguration
+chen.genealogy.framework.mq.rabbitmq.config.ChenRabbitMQAutoConfiguration

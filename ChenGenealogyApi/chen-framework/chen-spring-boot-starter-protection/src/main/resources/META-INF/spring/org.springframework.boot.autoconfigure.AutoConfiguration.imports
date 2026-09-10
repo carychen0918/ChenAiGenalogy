@@ -1,0 +1,4 @@
+chen.genealogy.framework.idempotent.config.ChenIdempotentConfiguration
+chen.genealogy.framework.lock4j.config.ChenLock4jConfiguration
+chen.genealogy.framework.ratelimiter.config.ChenRateLimiterConfiguration
+chen.genealogy.framework.signature.config.ChenApiSignatureAutoConfiguration

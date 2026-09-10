@@ -1,0 +1,5 @@
+chen.genealogy.framework.security.config.ChenSecurityRpcAutoConfiguration
+chen.genealogy.framework.security.config.ChenSecurityAutoConfiguration
+chen.genealogy.framework.security.config.ChenWebSecurityConfigurerAdapter
+chen.genealogy.framework.operatelog.config.ChenOperateLogConfiguration
+chen.genealogy.framework.operatelog.config.ChenOperateLogRpcAutoConfiguration

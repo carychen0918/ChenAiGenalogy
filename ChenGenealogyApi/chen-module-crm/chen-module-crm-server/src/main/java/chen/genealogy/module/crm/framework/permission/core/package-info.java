@@ -1,0 +1,1 @@
+package chen.genealogy.module.crm.framework.permission.core;

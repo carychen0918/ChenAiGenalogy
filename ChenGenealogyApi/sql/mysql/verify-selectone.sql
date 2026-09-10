@@ -1,0 +1,13 @@
+SELECT id, name, user_id FROM tb_member WHERE deleted = 0 AND user_id IS NOT NULL;
+SELECT user_id, COUNT(*) AS c FROM tb_member WHERE deleted = 0 AND user_id IS NOT NULL GROUP BY user_id HAVING c > 1;
+SELECT id, family_id, name FROM tb_tomb_site WHERE deleted = 0;
+SELECT family_id, COUNT(*) AS c FROM tb_tomb_site WHERE deleted = 0 GROUP BY family_id HAVING c > 1;
+SELECT id, family_id, year FROM tb_scholarship_config WHERE deleted = 0;
+SELECT family_id, year, COUNT(*) AS c FROM tb_scholarship_config WHERE deleted = 0 GROUP BY family_id, year HAVING c > 1;
+SELECT id, name FROM tb_family WHERE deleted = 0;
+SELECT family_id, generation_no, COUNT(*) AS c FROM tb_generation WHERE deleted = 0 GROUP BY family_id, generation_no HAVING c > 1;
+SELECT activity_id, user_id, COUNT(*) AS c FROM tb_activity_registration WHERE deleted = 0 AND status IN (1,2) GROUP BY activity_id, user_id HAVING c > 1;
+SELECT member_id, year, COUNT(*) AS c FROM tb_scholarship_application WHERE deleted = 0 AND status IN (0,1,2,3,4,5) GROUP BY member_id, year HAVING c > 1;
+SELECT feed_id, user_id, COUNT(*) AS c FROM tb_feed_like WHERE deleted = 0 GROUP BY feed_id, user_id HAVING c > 1;
+SELECT application_id, COUNT(*) AS c FROM tb_scholarship_disbursement WHERE deleted = 0 GROUP BY application_id HAVING c > 1;
+SELECT name, COUNT(*) AS c FROM tb_member WHERE deleted = 0 GROUP BY name HAVING c > 1;

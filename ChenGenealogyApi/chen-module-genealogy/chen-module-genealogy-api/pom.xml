@@ -1,0 +1,25 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>chen.genealogy</groupId>
+        <artifactId>chen-module-genealogy</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>chen-module-genealogy-api</artifactId>
+    <packaging>jar</packaging>
+
+    <name>${project.artifactId}</name>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>  <!-- 5. 新增 chen-common 依赖 -->
+        <dependency>
+            <groupId>chen.genealogy</groupId>
+            <artifactId>chen-common</artifactId>
+        </dependency>
+    </dependencies>
+</project>

@@ -1,0 +1,25 @@
+# Dependencies and build
+**/node_modules/
+**/target/
+**/dist/
+**/dist-ssr/
+**/output/
+**/.flattened-pom.xml
+pnpm-debug.log*
+
+# Local secrets and machine-only config
+**/.env.local
+**/.env.*.local
+**/application-my.yaml
+
+# IDE and OS
+**/.idea/
+**/.vscode/
+**/.history/
+**/.DS_Store
+*.iml
+*.ipr
+*.iws
+*.log
+*.swp
+*.xml.versionsBackup

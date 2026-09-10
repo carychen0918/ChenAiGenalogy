@@ -1,0 +1,3 @@
+chen.genealogy.framework.datasource.config.ChenDataSourceAutoConfiguration
+chen.genealogy.framework.mybatis.config.ChenMybatisAutoConfiguration
+chen.genealogy.framework.translate.config.ChenTranslateAutoConfiguration

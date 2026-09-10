@@ -1,0 +1,2 @@
+chen.genealogy.framework.redis.config.ChenRedisAutoConfiguration
+chen.genealogy.framework.redis.config.ChenCacheAutoConfiguration

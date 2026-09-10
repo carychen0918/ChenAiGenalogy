@@ -1,0 +1,1 @@
+package chen.genealogy.module.iot.gateway.protocol.emqx;

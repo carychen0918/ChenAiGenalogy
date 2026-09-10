@@ -117,6 +117,8 @@ export enum DICT_TYPE {
   TERMINAL = 'terminal', // 终端
   DATE_INTERVAL = 'date_interval', // 数据间隔
 
+  GENEALOGY_DEED_CATEGORY = 'genealogy_deed_category',
+
   // ========== SYSTEM 模块 ==========
   SYSTEM_USER_SEX = 'system_user_sex',
   SYSTEM_MENU_TYPE = 'system_menu_type',

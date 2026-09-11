@@ -9,6 +9,9 @@ public class GenerationRespVO {
     private Long familyId;
     private Integer generationNo;
     private String word;
+    private String nationalSource;
+    private String jiaofangSource;
+    private String house;
     private Integer status;
     private String remark;
     private Integer sort;

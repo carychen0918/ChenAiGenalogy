@@ -8,6 +8,14 @@ import lombok.Data;
 public class BookGenerationRowVO {
 
     private Integer generationNo;
+    private String chituOrder;
     private String words;
+    private String nationalSource;
+    private String jiaofangSource;
+    private String house1;
+    private String house2;
+    private String house3;
+    private String house3Zhijin;
+    private String house45;
     private String remark;
 }

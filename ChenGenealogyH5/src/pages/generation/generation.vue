@@ -1,11 +1,18 @@
 <template>
   <view class="page">
-    <view class="card" v-for="g in groups" :key="g.generationNo">
-      <view class="card-title">{{ g.generationNo }}世</view>
-      <view class="words">
-        <text class="tag" v-for="item in g.items" :key="item.id">{{ item.word }} · {{ status(item.status) }}</text>
-      </view>
-      <view class="muted">{{ g.items.map((i: any) => i.remark).filter(Boolean).join('；') }}</view>
+    <view class="card">
+      <view class="card-title">派语对照表</view>
+      <scroll-view scroll-x class="table-scroll">
+        <view class="table">
+          <view class="tr head">
+            <text v-for="col in POEM_COLS" :key="col.key" class="th">{{ col.label }}</text>
+          </view>
+          <view class="tr" v-for="row in rows" :key="row.generationNo">
+            <text v-for="col in POEM_COLS" :key="col.key" class="td">{{ cell(row[col.key]) }}</text>
+          </view>
+        </view>
+      </scroll-view>
+      <view v-if="!rows.length" class="muted empty">字辈录入中</view>
     </view>
     <view class="card">
       <view class="card-title">新生儿取名推荐</view>
@@ -21,37 +28,64 @@
 import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { GenealogyContentApi } from '@/api/genealogy'
-import { GEN_STATUS } from '@/utils'
 
-const list = ref<any[]>([])
+const POEM_COLS = [
+  { key: 'chituOrder', label: '赤土官庄世序' },
+  { key: 'nationalSource', label: '全国统一字派' },
+  { key: 'jiaofangSource', label: '高安椒坊字派' },
+  { key: 'house1', label: '长房' },
+  { key: 'house2', label: '二房' },
+  { key: 'house3', label: '三房' },
+  { key: 'house3Zhijin', label: '三房织金' },
+  { key: 'house45', label: '四五房' }
+]
+const rows = ref<any[]>([])
 const fatherGen = ref<number>()
 const word = ref('')
-const groups = computed(() => {
-  const map = new Map<number, any[]>()
-  for (const g of list.value) {
-    if (!map.has(g.generationNo)) map.set(g.generationNo, [])
-    map.get(g.generationNo)!.push(g)
-  }
-  return [...map.entries()].sort((a, b) => a[0] - b[0]).map(([generationNo, items]) => ({ generationNo, items }))
+const cell = (v?: string) => (v && String(v).trim() ? String(v).trim() : '—')
+const genLabels = computed(() => rows.value.map((g) => g.chituOrder || g.generationNo + '世'))
+const fatherLabel = computed(() => {
+  const row = rows.value.find((g) => g.generationNo === fatherGen.value)
+  return row ? row.chituOrder || row.generationNo + '世' : ''
 })
-const genLabels = computed(() => groups.value.map((g) => g.generationNo + '世'))
-const fatherLabel = computed(() => (fatherGen.value ? fatherGen.value + '世' : ''))
+const nameChar = (raw: string) => raw.replace(/（[^）]*）/g, '').replace(/\([^)]*\)/g, '')
 const examples = computed(() => {
   if (!word.value || word.value === '未定') return ''
-  return word.value.split('、').map((w) => `陈${w}华、陈${w}宇`).join('；')
+  return word.value.split('、').map((w) => {
+    const ch = nameChar(w)
+    return `陈${ch}华、陈${ch}宇`
+  }).join('；')
 })
-const status = (s: number) => GEN_STATUS[s] || ''
 const onPick = async (e: any) => {
-  const g = groups.value[Number(e.detail.value)]
+  const g = rows.value[Number(e.detail.value)]
+  if (!g) return
   fatherGen.value = g.generationNo
   word.value = await GenealogyContentApi.recommend(g.generationNo)
 }
 onLoad(async () => {
-  list.value = (await GenealogyContentApi.generationList()) || []
+  rows.value = (await GenealogyContentApi.poemTable()) || []
 })
 </script>
 <style scoped>
-.words { display: flex; flex-wrap: wrap; gap: 12rpx; margin: 12rpx 0; }
+.table-scroll { width: 100%; margin-top: 12rpx; }
+.table { min-width: 1280rpx; border: 1px solid #e8dfcc; border-radius: 8rpx; overflow: hidden; }
+.tr { display: flex; }
+.tr.head { background: #f4ece0; }
+.th, .td {
+  flex: 1;
+  min-width: 150rpx;
+  padding: 16rpx 8rpx;
+  text-align: center;
+  font-size: 22rpx;
+  border-right: 1px solid #eadfcb;
+  border-bottom: 1px solid #eadfcb;
+  box-sizing: border-box;
+}
+.th { font-weight: 700; color: #5c5144; }
+.td { color: #2a251f; }
+.tr:last-child .td { border-bottom: 0; }
+.th:last-child, .td:last-child { border-right: 0; }
 .picker { background: #f4ece0; padding: 20rpx; border-radius: 12rpx; }
 .result { margin-top: 16rpx; font-weight: 700; color: #a63d2f; }
+.empty { text-align: center; padding: 24rpx 0; }
 </style>

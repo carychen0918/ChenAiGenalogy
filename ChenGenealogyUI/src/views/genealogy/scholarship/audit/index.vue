@@ -43,7 +43,7 @@
         <el-descriptions-item label="申请编号">{{ detail.applyNo }}</el-descriptions-item>
         <el-descriptions-item label="学年">{{ detail.year }}</el-descriptions-item>
         <el-descriptions-item label="申请人">{{ detail.memberName }} · {{ detail.gender === 1 ? '男' : '女' }}</el-descriptions-item>
-        <el-descriptions-item label="字辈">{{ detail.generationNo }}世 {{ detail.generationWord || '' }}</el-descriptions-item>
+        <el-descriptions-item label="字辈">{{ formatMemberGeneration(detail) }}</el-descriptions-item>
         <el-descriptions-item label="地区" :span="2">{{ detail.regionName || '未填写' }}</el-descriptions-item>
         <el-descriptions-item label="学校" :span="2">{{ detail.school }} / {{ detail.major }} / {{ detail.grade }}</el-descriptions-item>
         <el-descriptions-item label="学号">{{ detail.studentNo }}</el-descriptions-item>
@@ -91,6 +91,7 @@
 <script setup lang="ts">
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 import { GenealogyScholarshipApi } from '@/api/genealogy'
+import { formatMemberGeneration } from '@/views/genealogy/utils/generation'
 defineOptions({ name: 'GenealogyScholarshipAudit' })
 const message = useMessage()
 const loading = ref(false)

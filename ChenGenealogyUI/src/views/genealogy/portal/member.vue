@@ -4,7 +4,7 @@
       <div class="flex gap-20px items-center">
         <el-avatar :size="86" :src="m.avatar">{{ m.name?.[0] }}</el-avatar>
         <div>
-          <h1 class="text-24px">{{ m.name }} <el-tag>{{ m.generationNo }}世 · {{ m.generationWord }}字辈</el-tag></h1>
+          <h1 class="text-24px">{{ m.name }} <el-tag>{{ formatMemberGeneration(m) }}</el-tag></h1>
           <div class="text-gray-500 mt-8px">{{ life }} · {{ m.gender === 1 ? '男' : '女' }}</div>
           <el-button v-if="isSelf" class="mt-12px" type="primary" @click="applyVisible = true">提交档案补充</el-button>
         </div>
@@ -114,6 +114,7 @@
 <script setup lang="ts">
 import { GenealogyMemberApi } from '@/api/genealogy'
 import { useUserStore } from '@/store/modules/user'
+import { formatMemberGeneration } from '@/views/genealogy/utils/generation'
 defineOptions({ name: 'PortalMember' })
 const route = useRoute()
 const router = useRouter()

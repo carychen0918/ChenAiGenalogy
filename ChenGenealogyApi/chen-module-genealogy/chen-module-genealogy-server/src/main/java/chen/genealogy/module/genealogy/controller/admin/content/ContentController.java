@@ -54,6 +54,13 @@ public class ContentController {
         return success(BeanUtils.toBean(contentService.getGenerationList(), GenerationRespVO.class));
     }
 
+    @GetMapping("/generation/poem-table")
+    @PermitAll
+    @Operation(summary = "字辈派语对照表")
+    public CommonResult<List<GenerationPoemRowVO>> generationPoemTable() {
+        return success(contentService.getPoemTable());
+    }
+
     @GetMapping("/generation/recommend")
     @PermitAll
     @Operation(summary = "根据父亲世代推荐下一辈字辈")

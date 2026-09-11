@@ -12,6 +12,9 @@ public class GenerationSaveReqVO {
     private Integer generationNo;
     @NotBlank(message = "字辈不能为空")
     private String word;
+    private String nationalSource;
+    private String jiaofangSource;
+    private String house;
     @NotNull(message = "状态不能为空")
     private Integer status;
     private String remark;

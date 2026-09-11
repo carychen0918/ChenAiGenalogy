@@ -405,6 +405,8 @@ public class ChenMemberServiceImpl implements ChenMemberService {
             GenerationDO gen = generationMapper.selectById(member.getGenerationId());
             if (gen != null) {
                 vo.setGenerationWord(gen.getWord());
+                vo.setGenerationHouse(gen.getHouse());
+                vo.setGenerationNationalSource(gen.getNationalSource());
             }
         }
         if (member.getFatherId() != null) {
@@ -445,14 +447,22 @@ public class ChenMemberServiceImpl implements ChenMemberService {
     }
 
     private MemberSimpleVO toSimple(MemberDO m) {
-        String word = null;
+        MemberSimpleVO vo = new MemberSimpleVO();
+        vo.setId(m.getId());
+        vo.setName(m.getName());
+        vo.setGender(m.getGender());
+        vo.setGenerationNo(m.getGenerationNo());
+        vo.setAvatar(m.getAvatar());
+        vo.setAlive(m.getAlive());
         if (m.getGenerationId() != null) {
             GenerationDO gen = generationMapper.selectById(m.getGenerationId());
             if (gen != null) {
-                word = gen.getWord();
+                vo.setGenerationWord(gen.getWord());
+                vo.setGenerationHouse(gen.getHouse());
+                vo.setGenerationNationalSource(gen.getNationalSource());
             }
         }
-        return new MemberSimpleVO(m.getId(), m.getName(), m.getGender(), m.getGenerationNo(), word, m.getAvatar(), m.getAlive());
+        return vo;
     }
 
     private void collectDescendants(Long id, List<MemberDO> all, Set<Long> keep, int level) {

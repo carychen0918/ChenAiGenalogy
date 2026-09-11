@@ -26,7 +26,7 @@
               <el-option
                 v-for="g in wordsOfSelected"
                 :key="g.id"
-                :label="g.word + (g.remark ? '（' + g.remark + '）' : '')"
+                :label="generationOptionLabel(g)"
                 :value="g.id"
               />
             </el-select>
@@ -179,6 +179,7 @@
 <script setup lang="ts">
 import { GenealogyContentApi, GenealogyMemberApi } from '@/api/genealogy'
 import { getAreaTree } from '@/api/system/area'
+import { formatGenerationWord } from '@/views/genealogy/utils/generation'
 
 defineOptions({ name: 'GenealogyMemberForm' })
 const message = useMessage()
@@ -200,6 +201,10 @@ const generationNos = computed(() =>
 const wordsOfSelected = computed(() =>
   generations.value.filter((g) => g.generationNo === selectedGenNo.value)
 )
+const generationOptionLabel = (g: any) => {
+  const label = formatGenerationWord(g)
+  return g.remark ? `${label}（${g.remark}）` : label
+}
 const onAreaChange = (val?: number[]) => {
   const path = val || []
   formData.value.provinceId = path[0]

@@ -16,6 +16,7 @@ export const GenealogyMemberApi = {
 export const GenealogyContentApi = {
   getFamily: () => request.get({ url: '/genealogy/content/family/get', isToken: false }),
   generationList: () => request.get({ url: '/genealogy/content/generation/list', isToken: false }),
+  poemTable: () => request.get({ url: '/genealogy/content/generation/poem-table', isToken: false }),
   recommend: (fatherGenerationNo: number) =>
     request.get({ url: '/genealogy/content/generation/recommend', params: { fatherGenerationNo }, isToken: false }),
   migrationList: () => request.get({ url: '/genealogy/content/migration/list', isToken: false }),

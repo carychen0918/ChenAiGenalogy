@@ -24,7 +24,7 @@ public interface ErrorCodeConstants {
     ErrorCode MEMBER_DEED_NOT_EXISTS = new ErrorCode(1_040_001_010, "事迹记录不存在");
 
     ErrorCode GENERATION_NOT_EXISTS = new ErrorCode(1_040_002_000, "字辈不存在");
-    ErrorCode GENERATION_DUPLICATE = new ErrorCode(1_040_002_001, "第{}世已存在「{}」字辈");
+    ErrorCode GENERATION_DUPLICATE = new ErrorCode(1_040_002_001, "第{}世该房下已存在「{}」字辈");
     ErrorCode GENERATION_IN_USE = new ErrorCode(1_040_002_002, "该字辈下仍有{}位成员，无法删除");
 
     ErrorCode ARCHIVE_APPLY_NOT_EXISTS = new ErrorCode(1_040_003_000, "档案补充申请不存在");

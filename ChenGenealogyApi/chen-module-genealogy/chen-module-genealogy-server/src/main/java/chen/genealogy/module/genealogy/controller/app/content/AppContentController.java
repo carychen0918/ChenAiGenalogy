@@ -4,6 +4,7 @@ import chen.genealogy.framework.common.pojo.CommonResult;
 import chen.genealogy.framework.common.pojo.PageResult;
 import chen.genealogy.framework.common.util.object.BeanUtils;
 import chen.genealogy.module.genealogy.controller.admin.content.vo.AncestorDeedPageReqVO;
+import chen.genealogy.module.genealogy.controller.admin.content.vo.GenerationPoemRowVO;
 import chen.genealogy.module.genealogy.controller.admin.content.vo.GenerationRespVO;
 import chen.genealogy.module.genealogy.dal.dataobject.activity.TombSiteDO;
 import chen.genealogy.module.genealogy.dal.dataobject.content.AncestorDeedDO;
@@ -43,6 +44,13 @@ public class AppContentController {
     @PermitAll
     public CommonResult<List<GenerationRespVO>> generationList() {
         return success(BeanUtils.toBean(contentService.getGenerationList(), GenerationRespVO.class));
+    }
+
+    @GetMapping("/generation/poem-table")
+    @PermitAll
+    @Operation(summary = "字辈派语对照表")
+    public CommonResult<List<GenerationPoemRowVO>> generationPoemTable() {
+        return success(contentService.getPoemTable());
     }
 
     @GetMapping("/generation/recommend")

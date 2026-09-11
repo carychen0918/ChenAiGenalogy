@@ -24,6 +24,8 @@ public class MemberRespVO {
     private Long generationId;
     private Integer generationNo;
     private String generationWord;
+    private String generationHouse;
+    private String generationNationalSource;
     private LocalDateTime birthDate;
     private LocalDateTime deathDate;
     private Long fatherId;

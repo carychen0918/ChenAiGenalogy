@@ -3,6 +3,8 @@ package chen.genealogy.module.genealogy.enums;
 public interface DictTypeConstants {
 
     String GENERATION_STATUS = "genealogy_generation_status";
+    String GENERATION_SOURCE = "genealogy_generation_source";
+    String GENERATION_HOUSE = "genealogy_generation_house";
     String SCHOLARSHIP_TYPE = "genealogy_scholarship_type";
     String SCHOLARSHIP_STATUS = "genealogy_scholarship_status";
     String DISBURSE_METHOD = "genealogy_disburse_method";

@@ -4,7 +4,7 @@
     <template v-else>
       <view class="card">
         <view class="card-title">{{ m.name }}</view>
-        <view class="muted">{{ m.generationNo }}世{{ m.generationWord ? ' · ' + m.generationWord + '字辈' : '' }}</view>
+        <view class="muted">{{ formatMemberGeneration(m) }}</view>
         <view>生卒：{{ life }}</view>
         <view v-if="m.regionName">地区：{{ m.regionName }}</view>
         <view v-if="m.address">住址：{{ m.address }}</view>
@@ -31,13 +31,14 @@ import { onLoad } from '@dcloudio/uni-app'
 import GuestLogin from '@/components/guest-login.vue'
 import { GenealogyMemberApi } from '@/api/genealogy'
 import { isLoggedIn } from '@/utils/auth'
+import { formatMemberGeneration } from '@/utils'
 
 const logged = ref(isLoggedIn())
 const m = ref<any>({})
 const life = computed(() => {
-  const birth = m.value.birthDate ? String(m.value.birthDate).slice(0, 10) : '?'
+  const birth = m.value.birthDate ? String(m.value.birthDate).slice(0, 4) : '?'
   const death = m.value.alive === false || m.value.alive === 0
-    ? (m.value.deathDate ? String(m.value.deathDate).slice(0, 10) : '?')
+    ? (m.value.deathDate ? String(m.value.deathDate).slice(0, 4) : '?')
     : '今'
   return `${birth} — ${death}`
 })

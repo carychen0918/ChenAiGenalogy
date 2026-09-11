@@ -15,6 +15,8 @@ public class MemberSimpleVO {
     private Integer gender;
     private Integer generationNo;
     private String generationWord;
+    private String generationHouse;
+    private String generationNationalSource;
     private String avatar;
     private Boolean alive;
 }

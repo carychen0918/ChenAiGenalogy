@@ -75,12 +75,31 @@
           </template>
           <template v-else-if="sheet.data.type === 'GENERATION'">
             <div class="chapter">字辈派语</div>
-            <el-table :data="sheet.data.generationRows" border size="small">
-              <el-table-column label="世代" width="90">
-                <template #default="s">{{ s.row.generationNo }}世</template>
+            <el-table :data="sheet.data.generationRows" border size="small" class="poem-table">
+              <el-table-column label="赤土官庄世序" min-width="120" align="center">
+                <template #default="s">{{ s.row.chituOrder || (s.row.generationNo ? s.row.generationNo + '世' : '—') }}</template>
               </el-table-column>
-              <el-table-column label="字辈" prop="words" />
-              <el-table-column label="说明" prop="remark" />
+              <el-table-column label="全国统一字派" prop="nationalSource" min-width="110" align="center">
+                <template #default="s">{{ s.row.nationalSource || '—' }}</template>
+              </el-table-column>
+              <el-table-column label="高安椒坊字派" prop="jiaofangSource" min-width="110" align="center">
+                <template #default="s">{{ s.row.jiaofangSource || '—' }}</template>
+              </el-table-column>
+              <el-table-column label="长房" prop="house1" min-width="80" align="center">
+                <template #default="s">{{ s.row.house1 || '—' }}</template>
+              </el-table-column>
+              <el-table-column label="二房" prop="house2" min-width="80" align="center">
+                <template #default="s">{{ s.row.house2 || '—' }}</template>
+              </el-table-column>
+              <el-table-column label="三房" prop="house3" min-width="80" align="center">
+                <template #default="s">{{ s.row.house3 || '—' }}</template>
+              </el-table-column>
+              <el-table-column label="三房织金" prop="house3Zhijin" min-width="90" align="center">
+                <template #default="s">{{ s.row.house3Zhijin || '—' }}</template>
+              </el-table-column>
+              <el-table-column label="四五房" prop="house45" min-width="80" align="center">
+                <template #default="s">{{ s.row.house45 || '—' }}</template>
+              </el-table-column>
             </el-table>
           </template>
           <template v-else>

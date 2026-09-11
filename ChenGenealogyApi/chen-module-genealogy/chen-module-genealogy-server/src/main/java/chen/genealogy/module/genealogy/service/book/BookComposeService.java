@@ -4,12 +4,14 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import chen.genealogy.framework.mybatis.core.query.LambdaQueryWrapperX;
 import chen.genealogy.module.genealogy.controller.admin.book.vo.*;
+import chen.genealogy.module.genealogy.controller.admin.content.vo.GenerationPoemRowVO;
 import chen.genealogy.module.genealogy.dal.dataobject.family.FamilyDO;
 import chen.genealogy.module.genealogy.dal.dataobject.generation.GenerationDO;
 import chen.genealogy.module.genealogy.dal.dataobject.member.MemberDO;
 import chen.genealogy.module.genealogy.dal.dataobject.member.MemberDeedDO;
 import chen.genealogy.module.genealogy.dal.mysql.member.MemberDeedMapper;
 import chen.genealogy.module.genealogy.dal.mysql.member.MemberMapper;
+import chen.genealogy.module.genealogy.enums.GenerationDisplay;
 import chen.genealogy.module.genealogy.service.content.ContentService;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
@@ -180,13 +182,15 @@ public class BookComposeService {
         book.byId = all.stream().collect(Collectors.toMap(MemberDO::getId, m -> m, (a, b) -> a));
         book.wordByGenId = gens.stream()
                 .filter(g -> g.getId() != null && StrUtil.isNotBlank(g.getWord()))
-                .collect(Collectors.toMap(GenerationDO::getId, GenerationDO::getWord, (a, b) -> a));
+                .collect(Collectors.toMap(GenerationDO::getId,
+                        g -> GenerationDisplay.wordWithHouse(g.getWord(), g.getHouse()), (a, b) -> a));
         Map<Integer, List<String>> wordsByNo = new TreeMap<>();
         for (GenerationDO g : gens) {
             if (g.getGenerationNo() == null || StrUtil.isBlank(g.getWord())) {
                 continue;
             }
-            wordsByNo.computeIfAbsent(g.getGenerationNo(), k -> new ArrayList<>()).add(g.getWord());
+            wordsByNo.computeIfAbsent(g.getGenerationNo(), k -> new ArrayList<>())
+                    .add(GenerationDisplay.wordWithHouse(g.getWord(), g.getHouse()));
         }
         wordsByNo.forEach((no, words) -> book.genWords.put(no, words.stream().distinct().collect(Collectors.joining("、"))));
 
@@ -246,7 +250,7 @@ public class BookComposeService {
             byGen.computeIfAbsent(no, k -> new ArrayList<>()).add(m);
         }
 
-        List<BookGenerationRowVO> genRows = buildGenerationRows(gens);
+        List<BookGenerationRowVO> genRows = toBookGenerationRows(contentService.getPoemTable());
         addFrontMatter(book, family, genRows);
         paginateLineage(book, byGen);
         fillGenerationIndex(book, gens, byGen);
@@ -446,22 +450,32 @@ public class BookComposeService {
         return t == null ? "?" : String.valueOf(t.getYear());
     }
 
-    private List<BookGenerationRowVO> buildGenerationRows(List<GenerationDO> gens) {
-        Map<Integer, List<GenerationDO>> map = new TreeMap<>();
-        for (GenerationDO g : gens) {
-            if (g.getGenerationNo() == null) {
-                continue;
-            }
-            map.computeIfAbsent(g.getGenerationNo(), k -> new ArrayList<>()).add(g);
-        }
+    private List<BookGenerationRowVO> toBookGenerationRows(List<GenerationPoemRowVO> poems) {
         List<BookGenerationRowVO> rows = new ArrayList<>();
-        for (Map.Entry<Integer, List<GenerationDO>> e : map.entrySet()) {
+        for (GenerationPoemRowVO p : poems) {
             BookGenerationRowVO row = new BookGenerationRowVO();
-            row.setGenerationNo(e.getKey());
-            row.setWords(e.getValue().stream().map(GenerationDO::getWord).filter(StrUtil::isNotBlank)
-                    .distinct().collect(Collectors.joining("、")));
-            row.setRemark(e.getValue().stream().map(GenerationDO::getRemark).filter(StrUtil::isNotBlank)
-                    .collect(Collectors.joining("；")));
+            row.setGenerationNo(p.getGenerationNo());
+            row.setChituOrder(p.getChituOrder());
+            row.setNationalSource(p.getNationalSource());
+            row.setJiaofangSource(p.getJiaofangSource());
+            row.setHouse1(p.getHouse1());
+            row.setHouse2(p.getHouse2());
+            row.setHouse3(p.getHouse3());
+            row.setHouse3Zhijin(p.getHouse3Zhijin());
+            row.setHouse45(p.getHouse45());
+            List<String> words = new ArrayList<>();
+            if (StrUtil.isNotBlank(p.getNationalSource())) {
+                words.add(p.getNationalSource());
+            }
+            if (StrUtil.isNotBlank(p.getJiaofangSource()) && !p.getJiaofangSource().equals(p.getNationalSource())) {
+                words.add(p.getJiaofangSource());
+            }
+            for (String w : new String[]{p.getHouse1(), p.getHouse2(), p.getHouse3(), p.getHouse3Zhijin(), p.getHouse45()}) {
+                if (StrUtil.isNotBlank(w) && !words.contains(w)) {
+                    words.add(w);
+                }
+            }
+            row.setWords(String.join("、", words));
             rows.add(row);
         }
         return rows;

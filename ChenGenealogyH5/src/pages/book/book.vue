@@ -46,11 +46,30 @@
           </view>
           <view v-else-if="sheet.data.type === 'GENERATION'">
             <view class="chapter">字辈派语</view>
-            <view class="gen-row" v-for="r in sheet.data.generationRows" :key="r.generationNo">
-              <text class="gen-no">{{ r.generationNo }}世</text>
-              <text class="gen-word">{{ r.words || '未定' }}</text>
-              <text class="muted">{{ r.remark }}</text>
-            </view>
+            <scroll-view scroll-x class="poem-scroll">
+              <view class="poem-table">
+                <view class="tr head">
+                  <text class="th">赤土官庄世序</text>
+                  <text class="th">全国统一字派</text>
+                  <text class="th">高安椒坊字派</text>
+                  <text class="th">长房</text>
+                  <text class="th">二房</text>
+                  <text class="th">三房</text>
+                  <text class="th">三房织金</text>
+                  <text class="th">四五房</text>
+                </view>
+                <view class="tr" v-for="r in sheet.data.generationRows" :key="r.generationNo">
+                  <text class="td">{{ r.chituOrder || (r.generationNo ? r.generationNo + '世' : '—') }}</text>
+                  <text class="td">{{ r.nationalSource || '—' }}</text>
+                  <text class="td">{{ r.jiaofangSource || '—' }}</text>
+                  <text class="td">{{ r.house1 || '—' }}</text>
+                  <text class="td">{{ r.house2 || '—' }}</text>
+                  <text class="td">{{ r.house3 || '—' }}</text>
+                  <text class="td">{{ r.house3Zhijin || '—' }}</text>
+                  <text class="td">{{ r.house45 || '—' }}</text>
+                </view>
+              </view>
+            </scroll-view>
           </view>
           <view v-else>
             <view class="chapter">
@@ -308,9 +327,22 @@ onLoad(async (q: any) => {
 .cover-line { width: 80rpx; height: 4rpx; background: #a63d2f; margin: 0 auto 28rpx; }
 .cover-rev { margin-top: 60rpx; color: #a63d2f; }
 .chapter { font-size: 34rpx; font-weight: 700; margin-bottom: 24rpx; border-left: 6rpx solid #a63d2f; padding-left: 16rpx; }
-.gen-row { display: flex; gap: 16rpx; padding: 16rpx 0; border-bottom: 1px dashed #e8dfcc; align-items: baseline; }
-.gen-no { width: 80rpx; color: #8b8273; }
-.gen-word { font-weight: 700; font-size: 32rpx; }
+.poem-scroll { width: 100%; }
+.poem-table { min-width: 1280rpx; border: 1px solid #e8dfcc; }
+.poem-table .tr { display: flex; }
+.poem-table .head { background: #f4ece0; }
+.poem-table .th, .poem-table .td {
+  flex: 1;
+  min-width: 150rpx;
+  padding: 12rpx 6rpx;
+  text-align: center;
+  font-size: 20rpx;
+  border-right: 1px solid #eadfcb;
+  border-bottom: 1px solid #eadfcb;
+  box-sizing: border-box;
+}
+.poem-table .th { font-weight: 700; color: #5c5144; }
+.poem-table .td:last-child, .poem-table .th:last-child { border-right: 0; }
 .branch { margin-bottom: 28rpx; }
 .branch-title { color: #a63d2f; font-weight: 700; margin-bottom: 8rpx; }
 .person { padding: 16rpx 0; border-bottom: 1px dashed #e8dfcc; }

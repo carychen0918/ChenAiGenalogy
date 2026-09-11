@@ -6,7 +6,7 @@
         <el-card header="我的档案">
           <div v-if="me">
             <div class="text-18px font-bold">{{ me.name }}</div>
-            <div class="text-13px text-gray-500 mt-6px">{{ me.generationNo }}世 · {{ me.generationWord }}字辈</div>
+            <div class="text-13px text-gray-500 mt-6px">{{ formatMemberGeneration(me) }}</div>
             <el-button class="mt-12px" type="primary" @click="$router.push('/portal/member?id=' + me.id)">查看完整档案</el-button>
             <div class="text-12px text-gray-500 mt-8px">可在完整档案中上传照片集、新增事迹与荣誉</div>
           </div>
@@ -51,6 +51,7 @@
 <script setup lang="ts">
 import { DICT_TYPE } from '@/utils/dict'
 import { useUserStore } from '@/store/modules/user'
+import { formatMemberGeneration } from '@/views/genealogy/utils/generation'
 import { GenealogyActivityApi, GenealogyFeedApi, GenealogyMemberApi } from '@/api/genealogy'
 defineOptions({ name: 'PortalProfile' })
 const message = useMessage()

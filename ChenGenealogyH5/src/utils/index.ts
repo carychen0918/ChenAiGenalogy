@@ -50,4 +50,41 @@ export const SCHOLARSHIP_STATUS: Record<number, string> = {
 }
 export const FEED_TYPE: Record<number, string> = { 1: '公告', 2: '动态', 3: '公示' }
 export const GEN_STATUS: Record<number, string> = { 1: '在用', 2: '已用', 3: '备用' }
+export const GEN_HOUSE: Record<string, string> = {
+  '1': '长房',
+  '2': '二房',
+  '3': '三房',
+  '4': '三房织金',
+  '5': '四五房'
+}
+export const houseLabel = (house?: string) => (house ? GEN_HOUSE[house] || house : '')
+export const formatGenerationWord = (item?: {
+  word?: string
+  generationWord?: string
+  house?: string
+  generationHouse?: string
+  nationalSource?: string
+  generationNationalSource?: string
+}) => {
+  if (!item) return ''
+  const word = item.word || item.generationWord || ''
+  const house = houseLabel(item.house || item.generationHouse)
+  const src = item.nationalSource || item.generationNationalSource || ''
+  const parts = [word, house]
+  if (src && src !== word) parts.push('源' + src)
+  return parts.filter(Boolean).join(' · ')
+}
+export const formatMemberGeneration = (m?: {
+  generationNo?: number
+  generationWord?: string
+  generationHouse?: string
+  generationNationalSource?: string
+}) => {
+  if (!m) return ''
+  const no = m.generationNo ? m.generationNo + '世' : ''
+  const word = formatGenerationWord(m)
+  if (no && word) return `${no} · ${word}字辈`
+  if (no) return no
+  return word ? word + '字辈' : ''
+}
 export const GRADES = ['大一', '大二', '大三', '大四', '研一', '研二', '研三', '专科']

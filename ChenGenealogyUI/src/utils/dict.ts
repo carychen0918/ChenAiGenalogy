@@ -117,8 +117,6 @@ export enum DICT_TYPE {
   TERMINAL = 'terminal', // 终端
   DATE_INTERVAL = 'date_interval', // 数据间隔
 
-  GENEALOGY_DEED_CATEGORY = 'genealogy_deed_category',
-
   // ========== SYSTEM 模块 ==========
   SYSTEM_USER_SEX = 'system_user_sex',
   SYSTEM_MENU_TYPE = 'system_menu_type',
@@ -423,8 +421,14 @@ export enum DICT_TYPE {
   IM_CHANNEL_MATERIAL_TYPE = 'im_channel_material_type', // IM 频道素材内容类型：1=富文本 / 2=外链
 
   // ========== 族谱 ==========
+  GENEALOGY_GENERATION_STATUS = 'genealogy_generation_status',
+  GENEALOGY_GENERATION_SOURCE = 'genealogy_generation_source',
+  GENEALOGY_GENERATION_HOUSE = 'genealogy_generation_house',
   GENEALOGY_SCHOLARSHIP_STATUS = 'genealogy_scholarship_status',
   GENEALOGY_SCHOLARSHIP_TYPE = 'genealogy_scholarship_type',
   GENEALOGY_GRADE = 'genealogy_grade',
-  GENEALOGY_DISBURSE_METHOD = 'genealogy_disburse_method'
+  GENEALOGY_DISBURSE_METHOD = 'genealogy_disburse_method',
+  GENEALOGY_DEED_CATEGORY = 'genealogy_deed_category',
+  GENEALOGY_FEED_TYPE = 'genealogy_feed_type',
+  GENEALOGY_FEED_STATUS = 'genealogy_feed_status',
 }

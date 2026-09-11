@@ -3,7 +3,7 @@
     <div class="toolbar">
       <div>
         <div class="text-22px font-bold">族谱世系</div>
-        <div class="text-13px text-gray-500">按世代自上而下展开，同一世可并列多种字辈。点击姓名查看详情</div>
+        <div class="text-13px text-gray-500">按世代自上而下展开，按所属房区分字辈。点击姓名查看详情</div>
       </div>
       <el-space>
         <el-radio-group v-model="mode">
@@ -15,7 +15,7 @@
     </div>
     <div v-if="kw">
       <el-card v-for="m in filtered" :key="m.id" class="mb-8px cursor-pointer" @click="$router.push('/portal/member?id=' + m.id)">
-        {{ m.name }} · {{ m.generationNo }}世{{ m.generationWord ? ' · ' + m.generationWord + '字辈' : '' }}
+        {{ m.name }} · {{ formatMemberGeneration(m) }}
       </el-card>
       <el-empty v-if="!filtered.length" :description="'未找到成员“' + kw + '”'" />
     </div>
@@ -27,7 +27,7 @@
           <div class="flex flex-wrap gap-12px">
             <div v-for="m in gen.nodes" :key="m.id" class="node" @click="openCard(m)">
               <div class="font-bold">{{ m.name }}</div>
-              <div class="text-12px text-gray-500">{{ m.generationWord ? m.generationWord + '字辈 · ' : '' }}{{ life(m) }}</div>
+              <div class="text-12px text-gray-500">{{ formatGenerationWord(m) ? formatGenerationWord(m) + '字辈 · ' : '' }}{{ life(m) }}</div>
             </div>
           </div>
         </div>
@@ -37,7 +37,7 @@
     <el-dialog v-model="cardVisible" title="成员卡片" width="420px">
       <div v-if="card">
         <div class="text-18px font-bold">{{ card.name }}</div>
-        <div class="mt-8px">{{ card.generationNo }}世{{ card.generationWord ? ' · ' + card.generationWord + '字辈' : '' }} · {{ card.gender === 1 ? '男' : '女' }}</div>
+        <div class="mt-8px">{{ formatMemberGeneration(card) }} · {{ card.gender === 1 ? '男' : '女' }}</div>
         <div class="mt-8px text-gray-500">{{ life(card) }}</div>
         <div class="mt-8px">配偶：{{ (card.spouseNames || []).join('、') || '—' }}</div>
       </div>
@@ -50,6 +50,7 @@
 <script setup lang="ts">
 import { GenealogyMemberApi } from '@/api/genealogy'
 import PedigreeChart from '@/views/genealogy/components/PedigreeChart.vue'
+import { formatGenerationWord, formatMemberGeneration } from '@/views/genealogy/utils/generation'
 
 defineOptions({ name: 'PortalTree' })
 const loading = ref(false)
@@ -70,7 +71,8 @@ const grouped = computed(() => {
     if (!map.has(no)) map.set(no, { no, words: new Set<string>(), nodes: [] as any[] })
     const row = map.get(no)
     row.nodes.push(m)
-    if (m.generationWord) row.words.add(m.generationWord)
+    const label = formatGenerationWord(m)
+    if (label) row.words.add(label)
   })
   return [...map.values()]
     .sort((a, b) => a.no - b.no)

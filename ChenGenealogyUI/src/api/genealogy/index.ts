@@ -38,6 +38,7 @@ export const GenealogyContentApi = {
   getFamily: () => request.get({ url: '/genealogy/content/family/get' }),
   updateFamily: (data: any) => request.put({ url: '/genealogy/content/family/update', data }),
   generationList: () => request.get({ url: '/genealogy/content/generation/list' }),
+  poemTable: () => request.get({ url: '/genealogy/content/generation/poem-table' }),
   recommend: (fatherGenerationNo: number) =>
     request.get({ url: '/genealogy/content/generation/recommend', params: { fatherGenerationNo } }),
   createGeneration: (data: any) => request.post({ url: '/genealogy/content/generation/create', data }),

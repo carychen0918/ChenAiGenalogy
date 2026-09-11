@@ -8,7 +8,7 @@
       <el-card header="个人信息（自动带入，不可修改）" class="mb-16px">
         <el-form-item label="姓名"><el-input :model-value="me?.name" disabled /></el-form-item>
         <el-form-item label="辈分">
-          <el-input :model-value="(me?.generationNo || '') + '世 · ' + (me?.generationWord || '')" disabled />
+          <el-input :model-value="formatMemberGeneration(me)" disabled />
         </el-form-item>
         <el-form-item label="所在地区">
           <el-input :model-value="me?.regionName || '未填写，请联系管理员补充后再提交'" disabled />
@@ -56,6 +56,7 @@
 <script setup lang="ts">
 import { DICT_TYPE, getIntDictOptions, getStrDictOptions } from '@/utils/dict'
 import { GenealogyMemberApi, GenealogyScholarshipApi } from '@/api/genealogy'
+import { formatMemberGeneration } from '@/views/genealogy/utils/generation'
 defineOptions({ name: 'PortalScholarshipApply' })
 const message = useMessage()
 const router = useRouter()

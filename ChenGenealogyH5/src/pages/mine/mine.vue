@@ -3,7 +3,7 @@
     <template v-if="logged">
       <view class="card">
         <view class="card-title">{{ member?.name || user?.nickname || '族人' }}</view>
-        <view class="muted" v-if="member">{{ member.generationNo }}世 · {{ member.generationWord }}字辈</view>
+        <view class="muted" v-if="member">{{ formatMemberGeneration(member) }}</view>
         <view class="muted" v-else>尚未关联族谱成员，请联系管理员认证</view>
         <button v-if="member?.id" class="btn-primary" style="margin-top: 20rpx" @click="go('/pages/member/member?id=' + member.id)">查看完整档案</button>
       </view>
@@ -37,6 +37,7 @@ import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { GenealogyActivityApi } from '@/api/genealogy'
 import { useUserStore } from '@/store/user'
+import { formatMemberGeneration } from '@/utils'
 
 const store = useUserStore()
 const logged = computed(() => store.isLogin)

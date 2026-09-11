@@ -24,7 +24,11 @@
         <template #default="scope">{{ scope.row.gender === 1 ? '男' : '女' }}</template>
       </el-table-column>
       <el-table-column label="世代" prop="generationNo" />
-      <el-table-column label="字辈" prop="generationWord" />
+      <el-table-column label="字辈" min-width="140">
+        <template #default="scope">
+          {{ formatGenerationWord(scope.row) || '—' }}
+        </template>
+      </el-table-column>
       <el-table-column label="地区" min-width="160">
         <template #default="scope">{{ scope.row.regionName || '未填写' }}</template>
       </el-table-column>
@@ -75,6 +79,7 @@
 import { dateFormatter } from '@/utils/formatTime'
 import download from '@/utils/download'
 import { GenealogyMemberApi } from '@/api/genealogy'
+import { formatGenerationWord } from '@/views/genealogy/utils/generation'
 import MemberForm from './MemberForm.vue'
 import MemberArchiveForm from './MemberArchiveForm.vue'
 

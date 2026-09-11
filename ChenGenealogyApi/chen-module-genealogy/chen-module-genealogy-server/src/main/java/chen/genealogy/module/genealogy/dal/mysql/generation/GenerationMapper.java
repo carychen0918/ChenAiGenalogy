@@ -43,6 +43,19 @@ public interface GenerationMapper extends BaseMapperX<GenerationDO> {
                 .last("LIMIT 1"));
     }
 
+    default GenerationDO selectByFamilyNoWordAndHouse(Long familyId, Integer generationNo, String word, String house) {
+        LambdaQueryWrapperX<GenerationDO> q = new LambdaQueryWrapperX<GenerationDO>()
+                .eq(GenerationDO::getFamilyId, familyId)
+                .eq(GenerationDO::getGenerationNo, generationNo)
+                .eq(GenerationDO::getWord, word);
+        if (house == null || house.isBlank()) {
+            q.and(w -> w.isNull(GenerationDO::getHouse).or().eq(GenerationDO::getHouse, ""));
+        } else {
+            q.eq(GenerationDO::getHouse, house);
+        }
+        return selectOne(q.last("LIMIT 1"));
+    }
+
     default List<GenerationDO> selectListByFamilyAndWord(Long familyId, String word) {
         return selectList(new LambdaQueryWrapperX<GenerationDO>()
                 .eq(GenerationDO::getFamilyId, familyId)

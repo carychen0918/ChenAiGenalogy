@@ -7,7 +7,7 @@
       </view>
       <view v-if="kw">
         <view class="card member" v-for="m in filtered" :key="m.id" @click="open(m.id)">
-          {{ m.name }} · {{ m.generationNo }}世{{ m.generationWord ? ' · ' + m.generationWord + '字辈' : '' }}
+          {{ m.name }} · {{ formatMemberGeneration(m) }}
         </view>
         <view v-if="!filtered.length" class="muted empty">未找到成员</view>
       </view>
@@ -17,7 +17,7 @@
           <view class="wrap">
             <view class="node card" v-for="m in gen.nodes" :key="m.id" @click="open(m.id)">
               <view class="name">{{ m.name }}</view>
-              <view class="muted">{{ life(m) }}</view>
+              <view class="muted">{{ formatGenerationWord(m) ? formatGenerationWord(m) + ' · ' : '' }}{{ life(m) }}</view>
             </view>
           </view>
         </view>
@@ -32,6 +32,7 @@ import { onShow } from '@dcloudio/uni-app'
 import GuestLogin from '@/components/guest-login.vue'
 import { GenealogyMemberApi } from '@/api/genealogy'
 import { isLoggedIn } from '@/utils/auth'
+import { formatGenerationWord, formatMemberGeneration } from '@/utils'
 
 const logged = ref(isLoggedIn())
 const loading = ref(false)
@@ -51,7 +52,8 @@ const grouped = computed(() => {
     if (!map.has(no)) map.set(no, { no, words: new Set<string>(), nodes: [] as any[] })
     const row = map.get(no)
     row.nodes.push(m)
-    if (m.generationWord) row.words.add(m.generationWord)
+    const label = formatGenerationWord(m)
+    if (label) row.words.add(label)
   })
   return [...map.values()]
     .sort((a, b) => a.no - b.no)

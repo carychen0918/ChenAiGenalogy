@@ -282,6 +282,8 @@ chen:
 --- #################### 芋道相关配置 ####################
 
 chen:
+  captcha:
+    enable: false
   info:
     version: 1.0.0
     base-package: chen.genealogy

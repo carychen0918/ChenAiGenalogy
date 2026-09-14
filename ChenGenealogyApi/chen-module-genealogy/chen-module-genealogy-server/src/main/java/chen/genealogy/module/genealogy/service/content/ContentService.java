@@ -20,6 +20,7 @@ import chen.genealogy.module.genealogy.dal.mysql.family.FamilyMapper;
 import chen.genealogy.module.genealogy.dal.mysql.generation.GenerationMapper;
 import chen.genealogy.module.genealogy.dal.mysql.member.MemberMapper;
 import chen.genealogy.module.genealogy.enums.GenerationDisplay;
+import chen.genealogy.module.genealogy.service.member.PedigreeCacheService;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -54,6 +55,8 @@ public class ContentService {
     private CultureGuideMapper cultureGuideMapper;
     @Resource
     private TombSiteMapper tombSiteMapper;
+    @Resource
+    private PedigreeCacheService pedigreeCacheService;
 
     public FamilyDO getFamily() {
         FamilyDO family = familyMapper.selectById(FAMILY_ID);
@@ -80,6 +83,7 @@ public class ContentService {
         }
         generationMapper.insert(gen);
         syncPoemFields(gen.getGenerationNo(), gen.getNationalSource(), gen.getJiaofangSource());
+        pedigreeCacheService.evictFamilyMembers();
         return gen.getId();
     }
 
@@ -94,6 +98,7 @@ public class ContentService {
         update.setFamilyId(FAMILY_ID);
         generationMapper.updateById(update);
         syncPoemFields(update.getGenerationNo(), update.getNationalSource(), update.getJiaofangSource());
+        pedigreeCacheService.evictFamilyMembers();
     }
 
     public void deleteGeneration(Long id) {
@@ -105,6 +110,7 @@ public class ContentService {
             throw exception(GENERATION_IN_USE, used);
         }
         generationMapper.deleteById(id);
+        pedigreeCacheService.evictFamilyMembers();
     }
 
     public List<GenerationDO> getGenerationList() {

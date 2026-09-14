@@ -22,12 +22,16 @@ public class MemberSaveReqVO {
     @Schema(description = "性别 1男 2女", requiredMode = Schema.RequiredMode.REQUIRED)
     private Integer gender;
 
-    @NotNull(message = "辈分不能为空")
-    @Schema(description = "字辈编号")
+    @Schema(description = "字辈编号；仅配偶档案可不填")
     private Long generationId;
+
+    @Schema(description = "是否仅配偶档案；为 true 时不校验字辈")
+    private Boolean spouseOnly;
 
     private LocalDateTime birthDate;
     private LocalDateTime deathDate;
+    @Schema(description = "是否在世，与逝世日期独立")
+    private Boolean alive;
     private Long fatherId;
     private Long motherId;
     private List<Long> spouseIds;

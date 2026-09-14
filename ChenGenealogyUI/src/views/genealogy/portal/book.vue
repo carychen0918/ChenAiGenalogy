@@ -298,7 +298,7 @@ onMounted(async () => {
 })
 </script>
 <style scoped>
-.book-page { max-width: 920px; margin: 0 auto; }
+.book-page { max-width: 1480px; margin: 0 auto; }
 .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
 .title { font-size: 22px; font-weight: 700; }
 .actions { display: flex; gap: 8px; flex-wrap: wrap; }

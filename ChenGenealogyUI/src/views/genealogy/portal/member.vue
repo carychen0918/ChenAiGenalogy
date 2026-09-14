@@ -115,6 +115,7 @@
 import { GenealogyMemberApi } from '@/api/genealogy'
 import { useUserStore } from '@/store/modules/user'
 import { formatMemberGeneration } from '@/views/genealogy/utils/generation'
+import { formatLifeSpan } from '@/views/genealogy/utils/member'
 defineOptions({ name: 'PortalMember' })
 const route = useRoute()
 const router = useRouter()
@@ -137,12 +138,7 @@ const isSelf = computed(() => {
   const loginId = Number(userStore.getUser?.id)
   return !!uid && !!loginId && uid === loginId
 })
-const life = computed(() => {
-  if (!m.value) return ''
-  const b = m.value.birthDate ? new Date(m.value.birthDate).getFullYear() : ''
-  const d = m.value.deathDate ? new Date(m.value.deathDate).getFullYear() : ''
-  return d ? `${b} — ${d}` : b ? `${b} 年生` : ''
-})
+const life = computed(() => (m.value ? formatLifeSpan(m.value) : ''))
 const load = async () => {
   loading.value = true
   try {

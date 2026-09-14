@@ -28,42 +28,34 @@
     </view>
 
     <view class="card">
-      <view class="card-title">{{ logged ? '家族动态' : '文化指南' }}</view>
-      <template v-if="logged">
-        <view v-for="f in feeds" :key="f.id" class="feed">
-          <text class="tag">{{ feedType(f.type) }}</text>
-          <text class="feed-title">{{ f.title }}</text>
-          <view class="muted">{{ f.content }}</view>
-          <view class="feed-actions">
-            <text @click="like(f)">赞 {{ f.likeCount || 0 }}</text>
-            <text @click="comment(f)">评论 {{ f.commentCount || 0 }}</text>
-          </view>
+      <view class="card-head">
+        <view class="card-title">家族动态</view>
+        <text v-if="feedTotal > 10" class="more" @click="go('/pages/feed/list')">更多</text>
+      </view>
+      <view v-for="f in feeds" :key="f.id" class="feed">
+        <text class="tag">{{ feedType(f.type) }}</text>
+        <text class="feed-title">{{ f.title }}</text>
+        <view class="muted">{{ f.content }}</view>
+        <view class="feed-actions">
+          <text @click="like(f)">赞 {{ f.likeCount || 0 }}</text>
+          <text @click="comment(f)">评论 {{ f.commentCount || 0 }}</text>
         </view>
-        <view v-if="!feeds.length" class="muted empty">暂无动态</view>
-      </template>
-      <template v-else>
-        <view v-for="c in cultures" :key="c.id" class="feed">
-          <view class="feed-title">{{ c.title }}</view>
-          <view class="muted">{{ strip(c.content) }}</view>
-        </view>
-        <view v-if="!cultures.length" class="muted empty">登录后可查看家族动态</view>
-        <button class="btn-primary" style="margin-top: 16rpx" @click="go('/pages/login/login')">去登录</button>
-      </template>
+      </view>
+      <view v-if="!feeds.length" class="muted empty">暂无动态</view>
     </view>
   </view>
 </template>
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { GenealogyContentApi, GenealogyFeedApi } from '@/api/genealogy'
 import { isLoggedIn } from '@/utils/auth'
-import { FEED_TYPE, stripHtml } from '@/utils'
+import { FEED_TYPE } from '@/utils'
 
 const family = ref<any>({})
 const notices = ref<any[]>([])
 const feeds = ref<any[]>([])
-const cultures = ref<any[]>([])
-const logged = computed(() => isLoggedIn())
+const feedTotal = ref(0)
 const modules = [
   { title: '谱书', desc: '在线翻阅 · 按辈按支', url: '/pages/book/book' },
   { title: '基础族谱', desc: '谱系 · 成员档案', url: '/pages/tree/tree' },
@@ -71,7 +63,6 @@ const modules = [
   { title: '学海无涯', desc: '家族助学申请', url: '/pages/scholarship/scholarship' }
 ]
 const feedType = (t: number) => FEED_TYPE[t] || '动态'
-const strip = (html: string) => stripHtml(html).slice(0, 48)
 const TAB_PAGES = ['/pages/index/index', '/pages/tree/tree', '/pages/roots/roots', '/pages/ancestor/ancestor', '/pages/mine/mine']
 const go = (url: string) => {
   if (TAB_PAGES.includes(url)) {
@@ -81,11 +72,18 @@ const go = (url: string) => {
   uni.navigateTo({ url })
 }
 const goTree = () => uni.switchTab({ url: '/pages/tree/tree' })
+const ensureLogin = () => {
+  if (isLoggedIn()) return true
+  uni.navigateTo({ url: '/pages/login/login?redirect=' + encodeURIComponent('/pages/index/index') })
+  return false
+}
 const like = async (f: any) => {
+  if (!ensureLogin()) return
   await GenealogyFeedApi.like(f.id)
   f.likeCount = (f.likeCount || 0) + 1
 }
 const comment = (f: any) => {
+  if (!ensureLogin()) return
   uni.showModal({
     title: '评论',
     editable: true,
@@ -101,11 +99,11 @@ const comment = (f: any) => {
 onShow(async () => {
   try { family.value = await GenealogyContentApi.getFamily() } catch {}
   try { notices.value = (await GenealogyFeedApi.page({ pageNo: 1, pageSize: 5, type: 1, status: 1 })).list || [] } catch {}
-  if (logged.value) {
-    try { feeds.value = (await GenealogyFeedApi.page({ pageNo: 1, pageSize: 8, status: 1 })).list || [] } catch {}
-  } else {
-    try { cultures.value = await GenealogyContentApi.cultureList() } catch {}
-  }
+  try {
+    const data: any = await GenealogyFeedApi.page({ pageNo: 1, pageSize: 10, status: 1 })
+    feeds.value = data?.list || []
+    feedTotal.value = data?.total || feeds.value.length
+  } catch {}
 })
 </script>
 <style scoped>
@@ -124,4 +122,6 @@ onShow(async () => {
 .feed-title { font-weight: 700; margin-left: 8rpx; }
 .feed-actions { margin-top: 12rpx; color: #a63d2f; font-size: 24rpx; display: flex; gap: 32rpx; }
 .empty { text-align: center; padding: 24rpx 0; }
+.card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8rpx; }
+.more { color: #a63d2f; font-size: 26rpx; }
 </style>

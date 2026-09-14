@@ -3,7 +3,7 @@
     <div class="toolbar">
       <div>
         <div class="text-22px font-bold">族谱世系</div>
-        <div class="text-13px text-gray-500">按世代自上而下展开，按所属房区分字辈。点击姓名查看详情</div>
+        <div class="text-13px text-gray-500">按世代自上而下展开，按所属房区分字辈。树形图可滚轮缩放、按住拖动，点击姓名查看详情</div>
       </div>
       <el-space>
         <el-radio-group v-model="mode">
@@ -27,19 +27,21 @@
           <div class="flex flex-wrap gap-12px">
             <div v-for="m in gen.nodes" :key="m.id" class="node" @click="openCard(m)">
               <div class="font-bold">{{ m.name }}</div>
-              <div class="text-12px text-gray-500">{{ formatGenerationWord(m) ? formatGenerationWord(m) + '字辈 · ' : '' }}{{ life(m) }}</div>
+              <div class="text-12px text-gray-500">{{ formatGenerationWord(m) ? formatGenerationWord(m) + '字辈 · ' : '' }}{{ formatLifeSpan(m) }}</div>
             </div>
           </div>
         </div>
       <el-empty v-if="!list.length" description="族谱录入中" />
       </div>
     </div>
-    <el-dialog v-model="cardVisible" title="成员卡片" width="420px">
+    <el-dialog v-model="cardVisible" title="成员卡片" width="480px">
       <div v-if="card">
         <div class="text-18px font-bold">{{ card.name }}</div>
-        <div class="mt-8px">{{ formatMemberGeneration(card) }} · {{ card.gender === 1 ? '男' : '女' }}</div>
-        <div class="mt-8px text-gray-500">{{ life(card) }}</div>
+        <div class="mt-8px">{{ formatMemberGeneration(card) || '—' }} · {{ card.gender === 1 ? '男' : '女' }}</div>
+        <div class="mt-8px text-gray-500">生卒：{{ formatLifeSpan(card) }}</div>
         <div class="mt-8px">配偶：{{ (card.spouseNames || []).join('、') || '—' }}</div>
+        <div v-if="card.intro" class="mt-12px intro">{{ card.intro }}</div>
+        <div v-else class="mt-12px text-gray-400 text-13px">暂无简介</div>
       </div>
       <template #footer>
         <el-button type="primary" @click="$router.push('/portal/member?id=' + card.id)">查看详情</el-button>
@@ -51,6 +53,7 @@
 import { GenealogyMemberApi } from '@/api/genealogy'
 import PedigreeChart from '@/views/genealogy/components/PedigreeChart.vue'
 import { formatGenerationWord, formatMemberGeneration } from '@/views/genealogy/utils/generation'
+import { formatLifeSpan, isSpouseOnlyMember } from '@/views/genealogy/utils/member'
 
 defineOptions({ name: 'PortalTree' })
 const loading = ref(false)
@@ -60,14 +63,21 @@ const mode = ref('tree')
 const cardVisible = ref(false)
 const card = ref<any>()
 
-const openCard = (m: any) => {
-  card.value = m
+const openCard = async (m: any) => {
   cardVisible.value = true
+  card.value = m
+  try {
+    card.value = await GenealogyMemberApi.get(m.id)
+  } catch {
+    card.value = m
+  }
 }
 const grouped = computed(() => {
   const map = new Map<number, any>()
-  list.value.forEach((m) => {
-    const no = m.generationNo || 0
+  list.value
+    .filter((m) => !isSpouseOnlyMember(m) && Number(m.generationNo) > 0)
+    .forEach((m) => {
+    const no = Number(m.generationNo)
     if (!map.has(no)) map.set(no, { no, words: new Set<string>(), nodes: [] as any[] })
     const row = map.get(no)
     row.nodes.push(m)
@@ -80,11 +90,6 @@ const grouped = computed(() => {
 })
 const allMembers = ref<any[]>([])
 const filtered = computed(() => allMembers.value.filter((m) => m.name?.includes(kw.value.trim())))
-const life = (m: any) => {
-  const b = m.birthDate ? new Date(m.birthDate).getFullYear() : ''
-  const d = m.deathDate ? new Date(m.deathDate).getFullYear() : ''
-  return d ? `${b}-${d}` : String(b)
-}
 onMounted(async () => {
   loading.value = true
   try {
@@ -100,4 +105,5 @@ onMounted(async () => {
 .list-wrap { background: #fffdf7; border: 1px solid #e8dfcc; border-radius: 12px; padding: 20px; }
 .node { min-width: 108px; padding: 10px 14px; border: 1px solid #ddd2bc; border-radius: 10px; text-align: center; cursor: pointer; background: #fff; }
 .node:hover { border-color: #a63d2f; }
+.intro { line-height: 1.7; color: #5c5348; white-space: pre-wrap; max-height: 200px; overflow: auto; }
 </style>

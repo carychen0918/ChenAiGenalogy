@@ -13,44 +13,59 @@
             </el-radio-group>
           </el-form-item>
         </el-col>
-        <el-col :span="12">
-          <el-form-item label="世代">
-            <el-select v-model="selectedGenNo" class="!w-1/1" placeholder="先选世代" @change="onGenNoChange">
-              <el-option v-for="n in generationNos" :key="n" :label="n + '世'" :value="n" />
-            </el-select>
+        <el-col :span="12" v-if="formData.gender === 2">
+          <el-form-item label="档案类型">
+            <el-checkbox v-model="spouseOnly" @change="onSpouseOnlyChange">仅配偶档案（不设字辈，由配偶方关联）</el-checkbox>
           </el-form-item>
         </el-col>
-        <el-col :span="12">
-          <el-form-item label="字辈" prop="generationId">
-            <el-select v-model="formData.generationId" class="!w-1/1" :disabled="!selectedGenNo" placeholder="再选字辈">
-              <el-option
-                v-for="g in wordsOfSelected"
-                :key="g.id"
-                :label="generationOptionLabel(g)"
-                :value="g.id"
-              />
-            </el-select>
-          </el-form-item>
-        </el-col>
+        <template v-if="!spouseOnly">
+          <el-col :span="12">
+            <el-form-item label="世代">
+              <el-select v-model="selectedGenNo" class="!w-1/1" placeholder="先选世代" @change="onGenNoChange">
+                <el-option v-for="n in generationNos" :key="n" :label="n + '世'" :value="n" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="字辈" prop="generationId">
+              <el-select v-model="formData.generationId" class="!w-1/1" :disabled="!selectedGenNo" placeholder="再选字辈">
+                <el-option
+                  v-for="g in wordsOfSelected"
+                  :key="g.id"
+                  :label="generationOptionLabel(g)"
+                  :value="g.id"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </template>
         <el-col :span="12">
           <el-form-item label="父亲">
-            <el-select v-model="formData.fatherId" filterable clearable class="!w-1/1">
-              <el-option v-for="m in members" :key="m.id" :label="m.name" :value="m.id" />
+            <el-select v-model="formData.fatherId" filterable clearable class="!w-1/1" @change="onFatherChange">
+              <el-option v-for="m in fatherCandidates" :key="m.id" :label="memberOptionLabel(m)" :value="m.id" />
             </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item label="母亲">
             <el-select v-model="formData.motherId" filterable clearable class="!w-1/1">
-              <el-option v-for="m in members" :key="m.id" :label="m.name" :value="m.id" />
+              <el-option v-for="m in members" :key="m.id" :label="memberOptionLabel(m)" :value="m.id" />
             </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item label="配偶">
             <el-select v-model="formData.spouseIds" multiple filterable clearable class="!w-1/1">
-              <el-option v-for="m in members" :key="m.id" :label="m.name" :value="m.id" />
+              <el-option v-for="m in spouseCandidates" :key="m.id" :label="memberOptionLabel(m)" :value="m.id" />
             </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="在世状态" prop="alive">
+            <el-radio-group v-model="formData.alive">
+              <el-radio :value="true">在世</el-radio>
+              <el-radio :value="false">已离世</el-radio>
+            </el-radio-group>
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -60,7 +75,7 @@
         </el-col>
         <el-col :span="12">
           <el-form-item label="逝世日期">
-            <el-date-picker v-model="formData.deathDate" value-format="x" class="!w-1/1" />
+            <el-date-picker v-model="formData.deathDate" value-format="x" class="!w-1/1" clearable placeholder="未知可不填" />
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -93,17 +108,17 @@
             <el-form-item label="开通登录">
               <el-switch
                 v-model="formData.createLoginAccount"
-                :disabled="!!formData.deathDate"
+                :disabled="formData.alive === false"
                 active-text="同步创建账号"
               />
             </el-form-item>
           </el-col>
-          <el-col :span="12" v-if="formData.createLoginAccount && !formData.deathDate">
+          <el-col :span="12" v-if="formData.createLoginAccount && formData.alive !== false">
             <el-form-item label="登录账号">
               <el-input v-model="formData.loginUsername" placeholder="选填，默认按姓名拼音生成" maxlength="30" />
             </el-form-item>
           </el-col>
-          <el-col :span="24" v-if="formData.createLoginAccount && !formData.deathDate">
+          <el-col :span="24" v-if="formData.createLoginAccount && formData.alive !== false">
             <el-form-item label=" ">
               <div class="text-12px text-gray-500">在世成员将同步创建客户端登录账号，默认密码保存后展示（一般为 Chen123456）</div>
             </el-form-item>
@@ -180,6 +195,7 @@
 import { GenealogyContentApi, GenealogyMemberApi } from '@/api/genealogy'
 import { getAreaTree } from '@/api/system/area'
 import { formatGenerationWord } from '@/views/genealogy/utils/generation'
+import { isSpouseOnlyMember, memberOptionLabel } from '@/views/genealogy/utils/member'
 
 defineOptions({ name: 'GenealogyMemberForm' })
 const message = useMessage()
@@ -190,11 +206,19 @@ const formType = ref('')
 const formData = ref<any>({})
 const areaTree = ref<any[]>([])
 const areaPath = ref<number[]>([])
-const formRules = { name: [{ required: true, message: '姓名不能为空', trigger: 'blur' }], gender: [{ required: true, message: '性别不能为空', trigger: 'change' }], generationId: [{ required: true, message: '字辈不能为空', trigger: 'change' }] }
+const formRules = computed(() => ({
+  name: [{ required: true, message: '姓名不能为空', trigger: 'blur' }],
+  gender: [{ required: true, message: '性别不能为空', trigger: 'change' }],
+  alive: [{ required: true, message: '请选择在世状态', trigger: 'change' }],
+  generationId: spouseOnly.value ? [] : [{ required: true, message: '字辈不能为空', trigger: 'change' }]
+}))
 const formRef = ref()
 const generations = ref<any[]>([])
 const members = ref<any[]>([])
 const selectedGenNo = ref<number>()
+const spouseOnly = ref(false)
+const fatherCandidates = computed(() => members.value.filter((m) => m.gender === 1))
+const spouseCandidates = computed(() => members.value.filter((m) => m.id !== formData.value.id))
 const generationNos = computed(() =>
   [...new Set(generations.value.map((g) => g.generationNo))].sort((a, b) => a - b)
 )
@@ -216,12 +240,33 @@ const onGenNoChange = () => {
   if (still) return
   formData.value.generationId = wordsOfSelected.value.length === 1 ? wordsOfSelected.value[0].id : undefined
 }
+const onSpouseOnlyChange = () => {
+  if (spouseOnly.value) {
+    selectedGenNo.value = undefined
+    formData.value.generationId = undefined
+    formData.value.generationNo = undefined
+    formData.value.fatherId = undefined
+  }
+}
+const onFatherChange = () => {
+  if (formData.value.fatherId) spouseOnly.value = false
+}
+watch(() => formData.value.gender, (g) => {
+  if (g === 1) spouseOnly.value = false
+})
+watch(() => formData.value.alive, (alive) => {
+  if (alive === false) formData.value.createLoginAccount = false
+})
+const syncSpouseOnlyFromForm = () => {
+  spouseOnly.value = isSpouseOnlyMember(formData.value)
+}
 
 const open = async (type: string, id?: number) => {
   dialogVisible.value = true
   dialogTitle.value = type === 'create' ? '新增成员' : '编辑成员'
   formType.value = type
-  formData.value = { gender: 1, spouseIds: [], photoUrls: [], deeds: [], createLoginAccount: true, loginUsername: '' }
+  formData.value = { gender: 1, alive: true, spouseIds: [], photoUrls: [], deeds: [], createLoginAccount: true, loginUsername: '' }
+  spouseOnly.value = false
   areaPath.value = []
   selectedGenNo.value = undefined
   generations.value = await GenealogyContentApi.generationList()
@@ -234,9 +279,11 @@ const open = async (type: string, id?: number) => {
       formData.value.photoUrls = formData.value.photoUrls || []
       formData.value.deeds = formData.value.deeds || []
       selectedGenNo.value = formData.value.generationNo
+      formData.value.alive = formData.value.alive !== false
+      syncSpouseOnlyFromForm()
       areaPath.value = [formData.value.provinceId, formData.value.cityId, formData.value.countyId].filter(Boolean)
       if (!formData.value.userId) {
-        formData.value.createLoginAccount = true
+        formData.value.createLoginAccount = formData.value.alive !== false
       }
     } finally {
       formLoading.value = false
@@ -288,7 +335,15 @@ const submitForm = async () => {
   await formRef.value.validate()
   formLoading.value = true
   try {
-    const data = { ...formData.value, confirmSpouseConflict: true, createLoginAccount: !!formData.value.createLoginAccount }
+    const data = {
+      ...formData.value,
+      spouseOnly: spouseOnly.value,
+      generationId: spouseOnly.value ? null : formData.value.generationId,
+      generationNo: spouseOnly.value ? null : formData.value.generationNo,
+      fatherId: spouseOnly.value ? null : formData.value.fatherId,
+      confirmSpouseConflict: true,
+      createLoginAccount: formData.value.alive !== false && !!formData.value.createLoginAccount
+    }
     const result = formType.value === 'create'
       ? await GenealogyMemberApi.create(data)
       : await GenealogyMemberApi.update(data)

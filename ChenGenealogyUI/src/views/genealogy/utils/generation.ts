@@ -54,11 +54,18 @@ export const formatMemberGeneration = (m?: {
   generationWord?: string
   generationHouse?: string
   generationNationalSource?: string
+  generationId?: number | null
+  gender?: number
+  fatherId?: number | null
 }) => {
   if (!m) return ''
   const no = m.generationNo ? m.generationNo + '世' : ''
   const word = formatGenerationWord(m)
   if (no && word) return `${no} · ${word}字辈`
   if (no) return no
-  return word ? word + '字辈' : ''
+  if (word) return word + '字辈'
+  if (m.gender === 2 && !m.generationId && !m.generationNo && !m.generationWord && !m.fatherId) {
+    return '配偶'
+  }
+  return ''
 }

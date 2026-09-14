@@ -1050,6 +1050,12 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: { hidden: true, canTo: true, title: '族人首页', noTagsView: true }
       },
       {
+        path: 'feeds',
+        component: () => import('@/views/genealogy/portal/feeds.vue'),
+        name: 'PortalFeeds',
+        meta: { hidden: true, canTo: true, title: '家族动态', noTagsView: true }
+      },
+      {
         path: 'tree',
         component: () => import('@/views/genealogy/portal/tree.vue'),
         name: 'PortalTree',

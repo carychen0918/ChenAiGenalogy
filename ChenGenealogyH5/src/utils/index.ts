@@ -74,17 +74,54 @@ export const formatGenerationWord = (item?: {
   if (src && src !== word) parts.push('源' + src)
   return parts.filter(Boolean).join(' · ')
 }
+export const isDeceased = (m?: { alive?: boolean | number | null }) =>
+  m?.alive === false || m?.alive === 0
+
+export const formatLifeSpan = (m?: {
+  birthDate?: string | number | null
+  deathDate?: string | number | Date | null
+  alive?: boolean | number | null
+}) => {
+  if (!m) return ''
+  const birth = m.birthDate ? String(m.birthDate).slice(0, 4) : '?'
+  if (isDeceased(m)) {
+    const death = m.deathDate ? String(m.deathDate).slice(0, 4) : '?'
+    return `${birth} — ${death}`
+  }
+  return `${birth} — 今`
+}
+
 export const formatMemberGeneration = (m?: {
   generationNo?: number
   generationWord?: string
   generationHouse?: string
   generationNationalSource?: string
+  generationId?: number | null
+  gender?: number
+  fatherId?: number | null
 }) => {
   if (!m) return ''
   const no = m.generationNo ? m.generationNo + '世' : ''
   const word = formatGenerationWord(m)
   if (no && word) return `${no} · ${word}字辈`
   if (no) return no
-  return word ? word + '字辈' : ''
+  if (word) return word + '字辈'
+  if (m.gender === 2 && !m.generationId && !m.generationNo && !m.generationWord && !m.fatherId) {
+    return '配偶'
+  }
+  return ''
 }
+
+export const isSpouseOnlyMember = (m?: {
+  gender?: number
+  generationId?: number | null
+  generationNo?: number | null
+  generationWord?: string | null
+  fatherId?: number | null
+}) =>
+  m?.gender === 2 &&
+  !m?.generationId &&
+  !m?.generationNo &&
+  !m?.generationWord &&
+  !m?.fatherId
 export const GRADES = ['大一', '大二', '大三', '大四', '研一', '研二', '研三', '专科']

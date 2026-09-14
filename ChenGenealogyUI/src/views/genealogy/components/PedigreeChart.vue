@@ -1,45 +1,79 @@
 <template>
   <div class="pedigree-wrap" v-if="layout.nodes.length">
-    <div v-if="layout.houses.length" class="legend">
-      <span class="legend-label">所属房</span>
-      <span v-for="h in layout.houses" :key="h.value" class="legend-item" :class="'house-' + h.value">
-        <i />{{ h.label }}
-      </span>
+    <div class="legend">
+      <div v-if="layout.houses.length" class="legend-houses">
+        <span class="legend-label">所属房</span>
+        <span v-for="h in layout.houses" :key="h.value" class="legend-item" :class="'house-' + h.value">
+          <i />{{ h.label }}
+        </span>
+      </div>
+      <div class="zoom-bar">
+        <span class="zoom-tip">滚轮缩放 · 按住拖动</span>
+        <button type="button" class="zoom-btn" @click="zoomBy(1 / 1.12)">－</button>
+        <span class="zoom-pct">{{ Math.round(scale * 100) }}%</span>
+        <button type="button" class="zoom-btn" @click="zoomBy(1.12)">＋</button>
+        <button type="button" class="zoom-btn" @click="resetZoom">还原</button>
+      </div>
     </div>
-    <div class="pedigree">
-      <div class="axis" :style="{ height: layout.height + 'px' }">
+    <div
+      ref="viewportRef"
+      class="pedigree"
+      :class="{ dragging: dragging }"
+      @wheel.prevent="onWheel"
+      @pointerdown="onPointerDown"
+      @pointermove="onPointerMove"
+      @pointerup="onPointerUp"
+      @pointercancel="onPointerCancel"
+    >
+      <div
+        class="scale-box"
+        :style="{
+          width: scaledWidth + 'px',
+          height: scaledHeight + 'px'
+        }"
+      >
         <div
-          v-for="row in layout.rows"
-          :key="row.no"
-          class="axis-row"
-          :style="{ top: row.y + 'px', height: ROW + 'px' }"
+          class="scale-inner"
+          :style="{
+            width: innerWidth + 'px',
+            height: layout.height + 'px',
+            transform: `scale(${scale})`
+          }"
         >
-          <div class="axis-no">{{ cnGen(row.no) }}</div>
-          <div v-if="row.words.length" class="axis-words" :title="row.words.join('、')">
-            <span v-for="(w, i) in row.words" :key="w + i" :class="row.houseClasses[i]">{{ w }}</span>
+          <div class="axis" :style="{ height: layout.height + 'px' }">
+            <div
+              v-for="row in layout.rows"
+              :key="row.no"
+              class="axis-row"
+              :style="{ top: row.y + 'px', height: ROW + 'px' }"
+            >
+              <div class="axis-no">{{ cnGen(row.no) }}</div>
+              <div v-if="row.words.length" class="axis-words" :title="row.words.join('、')">
+                <span v-for="(w, i) in row.words" :key="w + i" :class="row.houseClasses[i]">{{ w }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="canvas" :style="{ width: layout.width + 'px', height: layout.height + 'px' }">
+            <svg class="wires" :width="layout.width" :height="layout.height">
+              <path v-for="(d, i) in layout.paths" :key="i" :d="d" />
+            </svg>
+            <button
+              v-for="n in layout.nodes"
+              :key="n.id"
+              class="person"
+              :class="['house-' + (n.house || '0'), { female: n.gender === 2 }]"
+              :style="{ left: n.left + 'px', top: n.top + 'px' }"
+              type="button"
+            >
+              <span class="name">{{ n.name }}</span>
+              <span v-if="n.spouseText" class="spouse">{{ n.spouseText }}</span>
+              <span v-if="n.word" class="word">{{ n.word }}</span>
+              <span v-if="n.houseLabel" class="house">{{ n.houseLabel }}</span>
+              <span v-if="n.source && n.source !== n.word" class="source">源{{ n.source }}</span>
+              <span v-if="n.note" class="note">{{ n.note }}</span>
+            </button>
           </div>
         </div>
-      </div>
-      <div class="canvas" :style="{ width: layout.width + 'px', height: layout.height + 'px' }">
-        <svg class="wires" :width="layout.width" :height="layout.height">
-          <path v-for="(d, i) in layout.paths" :key="i" :d="d" />
-        </svg>
-        <button
-          v-for="n in layout.nodes"
-          :key="n.id"
-          class="person"
-          :class="['house-' + (n.house || '0'), { female: n.gender === 2 }]"
-          :style="{ left: n.left + 'px', top: n.top + 'px' }"
-          type="button"
-          @click="emit('select', n.member)"
-        >
-          <span class="name">{{ n.name }}</span>
-          <span v-if="n.spouseText" class="spouse">{{ n.spouseText }}</span>
-          <span v-if="n.word" class="word">{{ n.word }}</span>
-          <span v-if="n.houseLabel" class="house">{{ n.houseLabel }}</span>
-          <span v-if="n.source && n.source !== n.word" class="source">源{{ n.source }}</span>
-          <span v-if="n.note" class="note">{{ n.note }}</span>
-        </button>
       </div>
     </div>
   </div>
@@ -48,6 +82,7 @@
 
 <script setup lang="ts">
 import { HOUSE_LABEL, houseLabel } from '@/views/genealogy/utils/generation'
+import { isSpouseOnlyMember } from '@/views/genealogy/utils/member'
 
 defineOptions({ name: 'PedigreeChart' })
 
@@ -60,6 +95,154 @@ const PAD_X = 28
 const PAD_Y = 24
 const NODE_H = 126
 const BAR_GAP = 22
+const AXIS_W = 88
+const MIN_SCALE = 0.4
+const MAX_SCALE = 1
+
+const scale = ref(1)
+const viewportRef = ref<HTMLElement>()
+const dragging = ref(false)
+const moved = ref(false)
+let dragStart = { x: 0, y: 0, left: 0, top: 0 }
+let activePointer = -1
+const DRAG_THRESHOLD = 6
+
+const clampScale = (value: number) => Math.min(MAX_SCALE, Math.max(MIN_SCALE, value))
+
+const applyZoom = (next: number, origin?: { x: number; y: number }) => {
+  const el = viewportRef.value
+  const current = scale.value
+  const target = clampScale(next)
+  if (Math.abs(target - current) < 0.001) return
+  if (el && origin) {
+    const mx = origin.x + el.scrollLeft
+    const my = origin.y + el.scrollTop
+    const ratio = target / current
+    scale.value = target
+    nextTick(() => {
+      el.scrollLeft = mx * ratio - origin.x
+      el.scrollTop = my * ratio - origin.y
+    })
+    return
+  }
+  scale.value = target
+}
+
+const onWheel = (e: WheelEvent) => {
+  const factor = Math.exp(-e.deltaY * 0.0018)
+  const el = viewportRef.value
+  const origin = el
+    ? { x: e.clientX - el.getBoundingClientRect().left, y: e.clientY - el.getBoundingClientRect().top }
+    : undefined
+  applyZoom(scale.value * factor, origin)
+}
+
+const zoomBy = (factor: number) => {
+  const el = viewportRef.value
+  const origin = el ? { x: el.clientWidth / 2, y: el.clientHeight / 2 } : undefined
+  applyZoom(scale.value * factor, origin)
+}
+
+const resetZoom = () => {
+  scale.value = 1
+}
+
+const eventToInner = (e: PointerEvent) => {
+  const el = viewportRef.value
+  if (!el) return null
+  const rect = el.getBoundingClientRect()
+  const zoom = scale.value || 1
+  return {
+    x: (e.clientX - rect.left + el.scrollLeft) / zoom,
+    y: (e.clientY - rect.top + el.scrollTop) / zoom
+  }
+}
+
+const pickMember = (innerX: number, innerY: number) => {
+  const canvasX = innerX - AXIS_W
+  if (canvasX < -8) return null
+  let best: any = null
+  let bestDist = Infinity
+  for (const n of layout.value.nodes) {
+    const w = Math.max(UNIT - 8, 72)
+    if (canvasX < n.left - 8 || canvasX > n.left + w) continue
+    if (innerY < n.top - 6 || innerY > n.top + NODE_H + 6) continue
+    const dist = Math.hypot(canvasX - (n.left + 18), innerY - (n.top + 36))
+    if (dist < bestDist) {
+      bestDist = dist
+      best = n.member
+    }
+  }
+  return best
+}
+
+const releasePointer = (el: HTMLElement | undefined, pointerId: number) => {
+  if (!el) return
+  try {
+    if (el.hasPointerCapture(pointerId)) el.releasePointerCapture(pointerId)
+  } catch {
+    /* already released */
+  }
+}
+
+const onPointerDown = (e: PointerEvent) => {
+  if (e.button !== 0) return
+  const el = viewportRef.value
+  if (!el) return
+  activePointer = e.pointerId
+  dragging.value = true
+  moved.value = false
+  dragStart = { x: e.clientX, y: e.clientY, left: el.scrollLeft, top: el.scrollTop }
+}
+
+const onPointerMove = (e: PointerEvent) => {
+  if (!dragging.value || e.pointerId !== activePointer) return
+  const el = viewportRef.value
+  if (!el) return
+  const dx = e.clientX - dragStart.x
+  const dy = e.clientY - dragStart.y
+  if (!moved.value && Math.abs(dx) + Math.abs(dy) <= DRAG_THRESHOLD) return
+  if (!moved.value) {
+    moved.value = true
+    try {
+      el.setPointerCapture(e.pointerId)
+    } catch {
+      /* ignore */
+    }
+  }
+  el.scrollLeft = dragStart.left - dx
+  el.scrollTop = dragStart.top - dy
+}
+
+const onPointerUp = (e: PointerEvent) => {
+  if (activePointer !== -1 && e.pointerId !== activePointer) return
+  const el = viewportRef.value
+  releasePointer(el, e.pointerId)
+  const wasDrag = moved.value
+  dragging.value = false
+  moved.value = false
+  activePointer = -1
+  if (wasDrag) return
+  const pt = eventToInner(e)
+  if (!pt) return
+  const member = pickMember(pt.x, pt.y)
+  if (member) emit('select', member)
+}
+
+const onPointerCancel = (e: PointerEvent) => {
+  if (activePointer !== -1 && e.pointerId !== activePointer) return
+  releasePointer(viewportRef.value, e.pointerId)
+  dragging.value = false
+  moved.value = false
+  activePointer = -1
+}
+
+watch(
+  () => props.members,
+  () => {
+    scale.value = 1
+  }
+)
 const cnGen = (no: number) => {
   const map = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十']
   if (no <= 10) return `${map[no] || no}世`
@@ -75,8 +258,7 @@ const shortNote = (m: any) => {
   return intro.slice(0, 10)
 }
 
-const isSpouseOnly = (m: any) =>
-  !m.fatherId && m.gender === 2 && Array.isArray(m.spouseIds) && m.spouseIds.length > 0
+const isSpouseOnly = (m: any) => isSpouseOnlyMember(m)
 
 const houseRank = (house?: string) => {
   const n = Number(house)
@@ -155,17 +337,26 @@ const layout = computed(() => {
     forestLeft += r.width + UNIT / 2
   })
 
-  const gens = members.map((m) => m.generationNo || 1)
-  const minGen = Math.min(...gens)
-  const maxGen = Math.max(...gens)
-  const yOf = (no: number) => PAD_Y + ((no || minGen) - minGen) * ROW
-
   const flat: TreeNode[] = []
   const walk = (n: TreeNode) => {
     flat.push(n)
     n.children.forEach(walk)
   }
   roots.forEach(walk)
+
+  const occupiedNos = [
+    ...new Set(
+      flat
+        .map((n) => Number(n.member.generationNo))
+        .filter((no) => Number.isFinite(no) && no > 0)
+    )
+  ].sort((a, b) => a - b)
+  const rowIndex = new Map(occupiedNos.map((no, i) => [no, i]))
+  const yOf = (no?: number) => {
+    const key = Number(no) > 0 ? Number(no) : occupiedNos[0]
+    const idx = key ? (rowIndex.get(key) ?? 0) : 0
+    return PAD_Y + idx * ROW
+  }
 
   const spouseText = (m: any) => {
     const names = (m.spouseNames || []).filter(Boolean)
@@ -222,12 +413,13 @@ const layout = computed(() => {
   })
 
   const rowMap = new Map<number, { labels: string[]; classes: string[] }>()
-  members.forEach((m) => {
-    const no = m.generationNo || 0
-    if (!rowMap.has(no)) rowMap.set(no, { labels: [], classes: [] })
-    const word = m.generationWord
+  occupiedNos.forEach((no) => rowMap.set(no, { labels: [], classes: [] }))
+  flat.forEach((n) => {
+    const no = Number(n.member.generationNo)
+    if (!rowMap.has(no)) return
+    const word = n.member.generationWord
     if (!word) return
-    const house = m.generationHouse || ''
+    const house = n.member.generationHouse || ''
     const label = houseLabel(house) ? `${word}·${houseLabel(house)}` : word
     const row = rowMap.get(no)!
     if (!row.labels.includes(label)) {
@@ -235,12 +427,10 @@ const layout = computed(() => {
       row.classes.push(house ? 'house-' + house : '')
     }
   })
-  const rows = [...rowMap.keys()]
-    .sort((a, b) => a - b)
-    .map((no) => {
-      const row = rowMap.get(no)!
-      return { no, words: row.labels, houseClasses: row.classes, y: yOf(no) }
-    })
+  const rows = occupiedNos.map((no) => {
+    const row = rowMap.get(no)!
+    return { no, words: row.labels, houseClasses: row.classes, y: yOf(no) }
+  })
 
   const houseSet = new Set<string>()
   members.forEach((m) => {
@@ -251,15 +441,20 @@ const layout = computed(() => {
     .map((value) => ({ value, label: HOUSE_LABEL[value] }))
 
   const maxX = nodes.reduce((m, n) => Math.max(m, n.x), 0)
+  const lastNo = occupiedNos[occupiedNos.length - 1]
   return {
     nodes,
     paths,
     rows,
     houses,
     width: Math.max(maxX + PAD_X + 60, forestLeft),
-    height: yOf(maxGen) + ROW
+    height: (lastNo ? yOf(lastNo) : PAD_Y) + ROW
   }
 })
+
+const innerWidth = computed(() => AXIS_W + layout.value.width)
+const scaledWidth = computed(() => innerWidth.value * scale.value)
+const scaledHeight = computed(() => layout.value.height * scale.value)
 </script>
 
 <style scoped>
@@ -277,12 +472,48 @@ const layout = computed(() => {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
   padding: 10px 14px 8px;
   border-bottom: 1px solid #eadfcb;
   background: #f7f1e6;
   color: #6d6254;
   font-size: 12px;
+}
+.legend-houses {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.zoom-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.zoom-tip {
+  color: #8b8273;
+}
+.zoom-pct {
+  min-width: 44px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.zoom-btn {
+  min-width: 28px;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid #ddd2bc;
+  border-radius: 6px;
+  background: #fffdf7;
+  color: #5c5348;
+  cursor: pointer;
+}
+.zoom-btn:hover {
+  border-color: #a63d2f;
+  color: #a63d2f;
 }
 .legend-label {
   font-weight: 700;
@@ -303,6 +534,22 @@ const layout = computed(() => {
   align-items: flex-start;
   flex: 1;
   overflow: auto;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+.pedigree.dragging {
+  cursor: grabbing;
+}
+.scale-box {
+  flex: 0 0 auto;
+  position: relative;
+  overflow: hidden;
+}
+.scale-inner {
+  display: flex;
+  align-items: flex-start;
+  transform-origin: 0 0;
 }
 .axis {
   position: sticky;

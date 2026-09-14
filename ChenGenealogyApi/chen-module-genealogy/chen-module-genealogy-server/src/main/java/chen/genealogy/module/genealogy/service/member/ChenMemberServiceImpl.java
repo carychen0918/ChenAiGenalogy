@@ -52,7 +52,7 @@ public class ChenMemberServiceImpl implements ChenMemberService {
         MemberDO member = BeanUtils.toBean(reqVO, MemberDO.class);
         fillGeneration(member, reqVO.getGenerationId());
         member.setFamilyId(DEFAULT_FAMILY_ID);
-        member.setAlive(reqVO.getDeathDate() == null);
+        member.setAlive(resolveAlive(reqVO));
         memberMapper.insert(member);
         syncSpouse(member.getId(), reqVO.getSpouseIds(), reqVO.getConfirmSpouseConflict());
         return member.getId();
@@ -65,8 +65,9 @@ public class ChenMemberServiceImpl implements ChenMemberService {
         validateMember(reqVO, reqVO.getId());
         MemberDO update = BeanUtils.toBean(reqVO, MemberDO.class);
         fillGeneration(update, reqVO.getGenerationId());
-        update.setAlive(reqVO.getDeathDate() == null);
+        update.setAlive(resolveAlive(reqVO));
         memberMapper.updateById(update);
+        memberMapper.updateLineage(update);
         syncSpouse(reqVO.getId(), reqVO.getSpouseIds(), reqVO.getConfirmSpouseConflict());
     }
 
@@ -130,14 +131,7 @@ public class ChenMemberServiceImpl implements ChenMemberService {
             return Collections.emptyList();
         }
         Map<Long, MemberDO> map = all.stream().collect(Collectors.toMap(MemberDO::getId, m -> m));
-        MemberDO center = null;
-        if (rootId != null) {
-            center = map.get(rootId);
-        }
-        if (center == null) {
-            MemberDO me = getCurrentMember();
-            center = me != null ? map.get(me.getId()) : all.get(0);
-        }
+        MemberDO center = resolveTreeCenter(rootId, map, all);
         if (center == null) {
             return all.stream().map(m -> toResp(m, false)).collect(Collectors.toList());
         }
@@ -148,12 +142,17 @@ public class ChenMemberServiceImpl implements ChenMemberService {
         MemberDO cursor = center;
         for (int i = 0; i < upLevel && cursor != null && cursor.getFatherId() != null; i++) {
             cursor = map.get(cursor.getFatherId());
-            if (cursor != null) {
+            if (cursor != null && !isSpouseOnlyMember(cursor)) {
                 keep.add(cursor.getId());
             }
         }
         collectDescendants(center.getId(), all, keep, downLevel);
-        boolean fold = all.size() > 400 && (up != null || down != null || rootId != null);
+        for (MemberDO m : all) {
+            if (keep.contains(m.getId()) && CollUtil.isNotEmpty(m.getSpouseIds())) {
+                keep.addAll(m.getSpouseIds());
+            }
+        }
+        boolean fold = all.size() > 400 && rootId != null;
         final MemberDO root = center;
         return all.stream()
                 .filter(m -> !fold || keep.contains(m.getId()) || Objects.equals(m.getFatherId(), root.getId())
@@ -283,6 +282,12 @@ public class ChenMemberServiceImpl implements ChenMemberService {
     }
 
     private void validateMember(MemberSaveReqVO reqVO, Long selfId) {
+        if (isSpouseOnlyArchive(reqVO)) {
+            reqVO.setGenerationId(null);
+            reqVO.setFatherId(null);
+        } else if (reqVO.getGenerationId() == null) {
+            throw exception(MEMBER_GENERATION_REQUIRED);
+        }
         if (reqVO.getBirthDate() != null && reqVO.getDeathDate() != null
                 && reqVO.getBirthDate().isAfter(reqVO.getDeathDate())) {
             throw exception(MEMBER_DATE_INVALID);
@@ -380,8 +385,24 @@ public class ChenMemberServiceImpl implements ChenMemberService {
         return null;
     }
 
+    private Boolean resolveAlive(MemberSaveReqVO reqVO) {
+        if (reqVO.getAlive() != null) {
+            return reqVO.getAlive();
+        }
+        return true;
+    }
+
+    private boolean isSpouseOnlyArchive(MemberSaveReqVO reqVO) {
+        if (Boolean.TRUE.equals(reqVO.getSpouseOnly())) {
+            return true;
+        }
+        return Objects.equals(reqVO.getGender(), 2) && reqVO.getFatherId() == null;
+    }
+
     private void fillGeneration(MemberDO member, Long generationId) {
         if (generationId == null) {
+            member.setGenerationId(null);
+            member.setGenerationNo(null);
             return;
         }
         GenerationDO gen = generationMapper.selectById(generationId);
@@ -465,11 +486,67 @@ public class ChenMemberServiceImpl implements ChenMemberService {
         return vo;
     }
 
+    private boolean isSpouseOnlyMember(MemberDO m) {
+        return m != null
+                && Objects.equals(m.getGender(), 2)
+                && m.getFatherId() == null
+                && m.getGenerationId() == null
+                && m.getGenerationNo() == null;
+    }
+
+    private MemberDO resolveTreeCenter(Long rootId, Map<Long, MemberDO> map, List<MemberDO> all) {
+        MemberDO center = rootId != null ? map.get(rootId) : null;
+        if (isSpouseOnlyMember(center)) {
+            MemberDO partner = firstSpousePartner(center, map, all);
+            if (partner != null) {
+                center = partner;
+            }
+        }
+        if (center == null) {
+            center = pickProgenitor(all);
+        }
+        return center;
+    }
+
+    private MemberDO firstSpousePartner(MemberDO member, Map<Long, MemberDO> map, List<MemberDO> all) {
+        if (member == null) {
+            return null;
+        }
+        if (CollUtil.isNotEmpty(member.getSpouseIds())) {
+            for (Long spouseId : member.getSpouseIds()) {
+                MemberDO partner = map.get(spouseId);
+                if (partner != null && !isSpouseOnlyMember(partner)) {
+                    return partner;
+                }
+            }
+        }
+        for (MemberDO other : all) {
+            if (CollUtil.isNotEmpty(other.getSpouseIds()) && other.getSpouseIds().contains(member.getId())
+                    && !isSpouseOnlyMember(other)) {
+                return other;
+            }
+        }
+        return null;
+    }
+
+    private MemberDO pickProgenitor(List<MemberDO> all) {
+        return all.stream()
+                .filter(m -> !isSpouseOnlyMember(m))
+                .min(Comparator
+                        .comparing((MemberDO m) -> m.getFatherId() != null)
+                        .thenComparing(m -> m.getGenerationNo() == null ? Integer.MAX_VALUE : m.getGenerationNo())
+                        .thenComparing(MemberDO::getId))
+                .orElse(all.get(0));
+    }
+
     private void collectDescendants(Long id, List<MemberDO> all, Set<Long> keep, int level) {
         if (level <= 0) {
             return;
         }
         for (MemberDO m : all) {
+            if (isSpouseOnlyMember(m)) {
+                continue;
+            }
             if (Objects.equals(m.getFatherId(), id) || Objects.equals(m.getMotherId(), id)) {
                 keep.add(m.getId());
                 collectDescendants(m.getId(), all, keep, level - 1);

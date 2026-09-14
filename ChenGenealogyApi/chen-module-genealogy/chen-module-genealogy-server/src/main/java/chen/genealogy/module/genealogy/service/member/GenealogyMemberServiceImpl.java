@@ -66,6 +66,8 @@ public class GenealogyMemberServiceImpl implements MemberService {
     private ConfigApi configApi;
     @Resource
     private AdminRegionService adminRegionService;
+    @Resource
+    private PedigreeCacheService pedigreeCacheService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -75,7 +77,7 @@ public class GenealogyMemberServiceImpl implements MemberService {
         fillGeneration(member, reqVO.getGenerationId());
         fillRegion(member);
         member.setFamilyId(DEFAULT_FAMILY_ID);
-        member.setAlive(reqVO.getDeathDate() == null);
+        member.setAlive(resolveAlive(reqVO));
         memberMapper.insert(member);
         syncSpouse(member.getId(), reqVO.getSpouseIds(), reqVO.getConfirmSpouseConflict());
         AccountBind account = ensureLoginAccount(member, reqVO);
@@ -86,6 +88,7 @@ public class GenealogyMemberServiceImpl implements MemberService {
             resp.setUsername(account.username());
             resp.setDefaultPassword(account.password());
         }
+        pedigreeCacheService.evictFamilyMembers();
         return resp;
     }
 
@@ -97,8 +100,9 @@ public class GenealogyMemberServiceImpl implements MemberService {
         MemberDO update = BeanUtils.toBean(reqVO, MemberDO.class);
         fillGeneration(update, reqVO.getGenerationId());
         fillRegion(update);
-        update.setAlive(reqVO.getDeathDate() == null);
+        update.setAlive(resolveAlive(reqVO));
         memberMapper.updateById(update);
+        memberMapper.updateLineage(update);
         syncSpouse(reqVO.getId(), reqVO.getSpouseIds(), reqVO.getConfirmSpouseConflict());
         MemberDO latest = memberMapper.selectById(reqVO.getId());
         AccountBind account = ensureLoginAccount(latest, reqVO);
@@ -109,10 +113,12 @@ public class GenealogyMemberServiceImpl implements MemberService {
             resp.setUsername(account.username());
             resp.setDefaultPassword(account.password());
         }
+        pedigreeCacheService.evictFamilyMembers();
         return resp;
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void deleteMember(Long id, Boolean confirm) {
         validateMemberExists(id);
         long count = memberMapper.selectDescendantCount(id);
@@ -133,11 +139,14 @@ public class GenealogyMemberServiceImpl implements MemberService {
         patch.setDeletedTime(LocalDateTime.now());
         memberMapper.updateById(patch);
         memberMapper.deleteById(id);
+        pedigreeCacheService.evictFamilyMembers();
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void restoreMember(Long id) {
         memberMapper.restoreById(id);
+        pedigreeCacheService.evictFamilyMembers();
     }
 
     @Override
@@ -162,45 +171,45 @@ public class GenealogyMemberServiceImpl implements MemberService {
 
     @Override
     public List<MemberSimpleVO> getSimpleList() {
-        return memberMapper.selectListByFamilyId(DEFAULT_FAMILY_ID).stream().map(this::toSimple).collect(Collectors.toList());
+        return pedigreeCacheService.getFamilyMembers(DEFAULT_FAMILY_ID).stream()
+                .map(this::toSimple)
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<MemberRespVO> getTree(Long rootId, Integer up, Integer down) {
-        List<MemberDO> all = memberMapper.selectListByFamilyId(DEFAULT_FAMILY_ID);
+        List<MemberRespVO> all = pedigreeCacheService.getFamilyMembers(DEFAULT_FAMILY_ID);
         if (CollUtil.isEmpty(all)) {
             return Collections.emptyList();
         }
-        Map<Long, MemberDO> map = all.stream().collect(Collectors.toMap(MemberDO::getId, m -> m));
-        MemberDO center = null;
-        if (rootId != null) {
-            center = map.get(rootId);
-        }
+        Map<Long, MemberRespVO> map = all.stream().collect(Collectors.toMap(MemberRespVO::getId, m -> m));
+        MemberRespVO center = resolveTreeCenter(rootId, map, all);
         if (center == null) {
-            MemberDO me = getCurrentMember();
-            center = me != null ? map.get(me.getId()) : all.get(0);
+            return all.stream().map(this::copyAndMask).collect(Collectors.toList());
         }
-        if (center == null) {
-            return all.stream().map(m -> toResp(m, false)).collect(Collectors.toList());
-        }
-        int upLevel = up == null ? 3 : up;
-        int downLevel = down == null ? 3 : down;
+        int upLevel = up == null ? 30 : up;
+        int downLevel = down == null ? 30 : down;
         Set<Long> keep = new HashSet<>();
         keep.add(center.getId());
-        MemberDO cursor = center;
+        MemberRespVO cursor = center;
         for (int i = 0; i < upLevel && cursor != null && cursor.getFatherId() != null; i++) {
             cursor = map.get(cursor.getFatherId());
-            if (cursor != null) {
+            if (cursor != null && !isSpouseOnlyMember(cursor)) {
                 keep.add(cursor.getId());
             }
         }
         collectDescendants(center.getId(), all, keep, downLevel);
-        boolean fold = all.size() > 50;
-        final MemberDO root = center;
+        for (MemberRespVO m : all) {
+            if (keep.contains(m.getId()) && CollUtil.isNotEmpty(m.getSpouseIds())) {
+                keep.addAll(m.getSpouseIds());
+            }
+        }
+        boolean fold = all.size() > 400 && rootId != null;
+        final MemberRespVO root = center;
         return all.stream()
                 .filter(m -> !fold || keep.contains(m.getId()) || Objects.equals(m.getFatherId(), root.getId())
                         || Objects.equals(m.getFatherId(), root.getFatherId()))
-                .map(m -> toResp(m, false))
+                .map(this::copyAndMask)
                 .collect(Collectors.toList());
     }
 
@@ -298,6 +307,7 @@ public class GenealogyMemberServiceImpl implements MemberService {
                 patch.setId(member.getId());
                 patch.setIntro(intro.trim());
                 memberMapper.updateById(patch);
+                pedigreeCacheService.evictFamilyMembers();
             }
         }
     }
@@ -332,6 +342,7 @@ public class GenealogyMemberServiceImpl implements MemberService {
         patch.setId(me.getId());
         patch.setPhotoUrls(photoUrls == null ? new ArrayList<>() : photoUrls);
         memberMapper.updateById(patch);
+        pedigreeCacheService.evictFamilyMembers();
     }
 
     @Override
@@ -380,6 +391,7 @@ public class GenealogyMemberServiceImpl implements MemberService {
         patch.setIntro(reqVO.getIntro());
         patch.setPhotoUrls(reqVO.getPhotoUrls() == null ? new ArrayList<>() : reqVO.getPhotoUrls());
         memberMapper.updateById(patch);
+        pedigreeCacheService.evictFamilyMembers();
     }
 
     @Override
@@ -400,6 +412,12 @@ public class GenealogyMemberServiceImpl implements MemberService {
     }
 
     private void validateMember(MemberSaveReqVO reqVO, Long selfId) {
+        if (isSpouseOnlyArchive(reqVO)) {
+            reqVO.setGenerationId(null);
+            reqVO.setFatherId(null);
+        } else if (reqVO.getGenerationId() == null) {
+            throw exception(MEMBER_GENERATION_REQUIRED);
+        }
         if (reqVO.getBirthDate() != null && reqVO.getDeathDate() != null
                 && reqVO.getBirthDate().isAfter(reqVO.getDeathDate())) {
             throw exception(MEMBER_DATE_INVALID);
@@ -564,8 +582,24 @@ public class GenealogyMemberServiceImpl implements MemberService {
         }
     }
 
+    private Boolean resolveAlive(MemberSaveReqVO reqVO) {
+        if (reqVO.getAlive() != null) {
+            return reqVO.getAlive();
+        }
+        return true;
+    }
+
+    private boolean isSpouseOnlyArchive(MemberSaveReqVO reqVO) {
+        if (Boolean.TRUE.equals(reqVO.getSpouseOnly())) {
+            return true;
+        }
+        return Objects.equals(reqVO.getGender(), 2) && reqVO.getFatherId() == null;
+    }
+
     private void fillGeneration(MemberDO member, Long generationId) {
         if (generationId == null) {
+            member.setGenerationId(null);
+            member.setGenerationNo(null);
             return;
         }
         GenerationDO gen = generationMapper.selectById(generationId);
@@ -657,11 +691,87 @@ public class GenealogyMemberServiceImpl implements MemberService {
         return vo;
     }
 
-    private void collectDescendants(Long id, List<MemberDO> all, Set<Long> keep, int level) {
+    private MemberSimpleVO toSimple(MemberRespVO m) {
+        MemberSimpleVO vo = new MemberSimpleVO();
+        vo.setId(m.getId());
+        vo.setName(m.getName());
+        vo.setGender(m.getGender());
+        vo.setGenerationNo(m.getGenerationNo());
+        vo.setGenerationWord(m.getGenerationWord());
+        vo.setGenerationHouse(m.getGenerationHouse());
+        vo.setGenerationNationalSource(m.getGenerationNationalSource());
+        vo.setAvatar(m.getAvatar());
+        vo.setAlive(m.getAlive());
+        return vo;
+    }
+
+    private MemberRespVO copyAndMask(MemberRespVO src) {
+        MemberRespVO vo = BeanUtils.toBean(src, MemberRespVO.class);
+        maskSensitive(vo);
+        return vo;
+    }
+
+    private boolean isSpouseOnlyMember(MemberRespVO m) {
+        return m != null
+                && Objects.equals(m.getGender(), 2)
+                && m.getFatherId() == null
+                && m.getGenerationId() == null
+                && m.getGenerationNo() == null;
+    }
+
+    private MemberRespVO resolveTreeCenter(Long rootId, Map<Long, MemberRespVO> map, List<MemberRespVO> all) {
+        MemberRespVO center = rootId != null ? map.get(rootId) : null;
+        if (isSpouseOnlyMember(center)) {
+            MemberRespVO partner = firstSpousePartner(center, map, all);
+            if (partner != null) {
+                center = partner;
+            }
+        }
+        if (center == null) {
+            center = pickProgenitor(all);
+        }
+        return center;
+    }
+
+    private MemberRespVO firstSpousePartner(MemberRespVO member, Map<Long, MemberRespVO> map, List<MemberRespVO> all) {
+        if (member == null) {
+            return null;
+        }
+        if (CollUtil.isNotEmpty(member.getSpouseIds())) {
+            for (Long spouseId : member.getSpouseIds()) {
+                MemberRespVO partner = map.get(spouseId);
+                if (partner != null && !isSpouseOnlyMember(partner)) {
+                    return partner;
+                }
+            }
+        }
+        for (MemberRespVO other : all) {
+            if (CollUtil.isNotEmpty(other.getSpouseIds()) && other.getSpouseIds().contains(member.getId())
+                    && !isSpouseOnlyMember(other)) {
+                return other;
+            }
+        }
+        return null;
+    }
+
+    private MemberRespVO pickProgenitor(List<MemberRespVO> all) {
+        return all.stream()
+                .filter(m -> !isSpouseOnlyMember(m))
+                .min(Comparator
+                        .comparing((MemberRespVO m) -> m.getFatherId() != null)
+                        .thenComparing(m -> m.getGenerationNo() == null ? Integer.MAX_VALUE : m.getGenerationNo())
+                        .thenComparing(MemberRespVO::getId))
+                .orElse(all.get(0));
+    }
+
+    private void collectDescendants(Long id, List<MemberRespVO> all, Set<Long> keep, int level) {
         if (level <= 0) {
             return;
         }
-        for (MemberDO m : all) {
+        for (MemberRespVO m : all) {
+            if (isSpouseOnlyMember(m)) {
+                continue;
+            }
             if (Objects.equals(m.getFatherId(), id) || Objects.equals(m.getMotherId(), id)) {
                 keep.add(m.getId());
                 collectDescendants(m.getId(), all, keep, level - 1);

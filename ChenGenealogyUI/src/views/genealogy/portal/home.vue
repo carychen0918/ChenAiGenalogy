@@ -30,8 +30,12 @@
     <el-row :gutter="16">
       <el-col :span="12">
         <el-card>
-          <template #header>家族动态</template>
-          <template v-if="logged">
+          <template #header>
+            <div class="flex items-center justify-between">
+              <span>家族动态</span>
+              <el-button v-if="feedTotal > 10" link type="primary" @click="$router.push('/portal/feeds')">更多</el-button>
+            </div>
+          </template>
           <div v-for="f in feeds" :key="f.id" class="py-12px border-b">
             <el-tag size="small">{{ f.type === 1 ? '公告' : f.type === 3 ? '公示' : '动态' }}</el-tag>
             <span class="ml-8px font-bold">{{ f.title }}</span>
@@ -41,11 +45,7 @@
               <el-button link @click="comment(f)">评论 {{ f.commentCount || 0 }}</el-button>
             </el-space>
           </div>
-          <el-empty v-if="!feeds.length" description="暂无动态，发布第一条吧" />
-          </template>
-          <el-empty v-else description="登录后可查看家族动态并发布内容">
-            <el-button type="primary" @click="$router.push('/portal/login')">去登录</el-button>
-          </el-empty>
+          <el-empty v-if="!feeds.length" description="暂无动态" />
         </el-card>
       </el-col>
       <el-col :span="12">
@@ -70,12 +70,14 @@
 </template>
 <script setup lang="ts">
 import { GenealogyContentApi, GenealogyFeedApi, GenealogyScholarshipApi } from '@/api/genealogy'
-import { isLoggedIn } from '@/utils/portalAuth'
+import { isLoggedIn, PORTAL_LOGIN } from '@/utils/portalAuth'
 defineOptions({ name: 'PortalHome' })
+const router = useRouter()
 const message = useMessage()
 const logged = computed(() => isLoggedIn())
 const family = ref<any>({})
 const feeds = ref<any[]>([])
+const feedTotal = ref(0)
 const notices = ref<any[]>([])
 const cultures = ref<any[]>([])
 const config = ref<any>()
@@ -86,11 +88,18 @@ const modules = [
   { title: '清明祭祖', desc: '活动报名 · 坟地导航', path: '/portal/ancestor' }
 ]
 const format = (t: number) => (t ? new Date(t).toLocaleDateString() : '')
+const ensureLogin = (redirect = '/portal/home') => {
+  if (isLoggedIn()) return true
+  router.push(`${PORTAL_LOGIN}?redirect=${encodeURIComponent(redirect)}`)
+  return false
+}
 const like = async (f: any) => {
+  if (!ensureLogin()) return
   await GenealogyFeedApi.like(f.id)
   f.likeCount = (f.likeCount || 0) + 1
 }
 const comment = async (f: any) => {
+  if (!ensureLogin()) return
   const { value } = await ElMessageBox.prompt('请输入评论', '评论')
   if (!value) return
   await GenealogyFeedApi.comment(f.id, value)
@@ -99,8 +108,12 @@ const comment = async (f: any) => {
 onMounted(async () => {
   try { family.value = await GenealogyContentApi.getFamily() } catch {}
   try { notices.value = (await GenealogyFeedApi.page({ pageNo: 1, pageSize: 5, type: 1, status: 1 })).list } catch {}
+  try {
+    const data = await GenealogyFeedApi.page({ pageNo: 1, pageSize: 10, status: 1 })
+    feeds.value = data?.list || []
+    feedTotal.value = data?.total || feeds.value.length
+  } catch {}
   if (logged.value) {
-    try { feeds.value = (await GenealogyFeedApi.page({ pageNo: 1, pageSize: 8, status: 1 })).list } catch {}
     try { config.value = await GenealogyScholarshipApi.getConfig() } catch {}
   } else {
     try { cultures.value = await GenealogyContentApi.cultureList() } catch {}

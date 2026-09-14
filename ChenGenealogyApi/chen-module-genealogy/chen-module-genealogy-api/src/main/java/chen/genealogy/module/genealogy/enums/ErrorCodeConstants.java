@@ -22,6 +22,7 @@ public interface ErrorCodeConstants {
     ErrorCode MEMBER_LOGIN_ROLE_MISSING = new ErrorCode(1_040_001_008, "未找到「普通族人」角色，无法开通登录账号");
     ErrorCode MEMBER_LOGIN_USERNAME_INVALID = new ErrorCode(1_040_001_009, "登录账号需为 4-30 位字母或数字");
     ErrorCode MEMBER_DEED_NOT_EXISTS = new ErrorCode(1_040_001_010, "事迹记录不存在");
+    ErrorCode MEMBER_GENERATION_REQUIRED = new ErrorCode(1_040_001_011, "请填写字辈；仅作配偶档案的女性可不设字辈");
 
     ErrorCode GENERATION_NOT_EXISTS = new ErrorCode(1_040_002_000, "字辈不存在");
     ErrorCode GENERATION_DUPLICATE = new ErrorCode(1_040_002_001, "第{}世该房下已存在「{}」字辈");

@@ -73,7 +73,7 @@ onMounted(async () => {
   font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
 .nav { position: sticky; top: 0; z-index: 20; background: #fffdf7; border-bottom: 1px solid #e8dfcc; flex-shrink: 0; }
-.nav-inner { max-width: 1180px; margin: 0 auto; height: 62px; display: flex; align-items: center; gap: 24px; padding: 0 20px; }
+.nav-inner { max-width: 1680px; margin: 0 auto; height: 62px; display: flex; align-items: center; gap: 24px; padding: 0 32px; }
 .brand { display: flex; align-items: center; gap: 10px; cursor: pointer; }
 .seal-img { width: 38px; height: 38px; border-radius: 9px; object-fit: cover; }
 .brand-text { font-size: 18px; font-weight: 700; }
@@ -83,6 +83,6 @@ onMounted(async () => {
 .links a.router-link-active { background: #f4e3de; color: #a63d2f; font-weight: 600; }
 .right { display: flex; align-items: center; gap: 12px; }
 .login-btn { background: #a63d2f; border-color: #a63d2f; }
-.main { flex: 1; width: 100%; max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; }
+.main { flex: 1; width: 100%; max-width: 1680px; margin: 0 auto; padding: 24px 32px 60px; }
 .foot { flex-shrink: 0; border-top: 1px solid #e8dfcc; background: #efe7d6; padding: 26px; text-align: center; color: #8b8273; font-size: 13px; }
 </style>

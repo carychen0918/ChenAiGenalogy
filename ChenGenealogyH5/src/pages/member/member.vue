@@ -31,17 +31,11 @@ import { onLoad } from '@dcloudio/uni-app'
 import GuestLogin from '@/components/guest-login.vue'
 import { GenealogyMemberApi } from '@/api/genealogy'
 import { isLoggedIn } from '@/utils/auth'
-import { formatMemberGeneration } from '@/utils'
+import { formatLifeSpan, formatMemberGeneration } from '@/utils'
 
 const logged = ref(isLoggedIn())
 const m = ref<any>({})
-const life = computed(() => {
-  const birth = m.value.birthDate ? String(m.value.birthDate).slice(0, 4) : '?'
-  const death = m.value.alive === false || m.value.alive === 0
-    ? (m.value.deathDate ? String(m.value.deathDate).slice(0, 4) : '?')
-    : '今'
-  return `${birth} — ${death}`
-})
+const life = computed(() => formatLifeSpan(m.value))
 onLoad(async (q) => {
   logged.value = isLoggedIn()
   if (!logged.value) return

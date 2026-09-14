@@ -5,6 +5,7 @@ import chen.genealogy.framework.mybatis.core.mapper.BaseMapperX;
 import chen.genealogy.framework.mybatis.core.query.LambdaQueryWrapperX;
 import chen.genealogy.module.genealogy.controller.admin.member.vo.MemberPageReqVO;
 import chen.genealogy.module.genealogy.dal.dataobject.member.MemberDO;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -54,6 +55,16 @@ public interface MemberMapper extends BaseMapperX<MemberDO> {
 
     default long selectDescendantCount(Long fatherId) {
         return selectCount(MemberDO::getFatherId, fatherId);
+    }
+
+    /** updateById 会忽略 null，改为配偶档案时必须显式清空字辈、世代、父母 */
+    default int updateLineage(MemberDO member) {
+        return update(null, new LambdaUpdateWrapper<MemberDO>()
+                .eq(MemberDO::getId, member.getId())
+                .set(MemberDO::getGenerationId, member.getGenerationId())
+                .set(MemberDO::getGenerationNo, member.getGenerationNo())
+                .set(MemberDO::getFatherId, member.getFatherId())
+                .set(MemberDO::getMotherId, member.getMotherId()));
     }
 
     @Select("SELECT * FROM tb_member WHERE deleted = 1 ORDER BY deleted_time DESC")

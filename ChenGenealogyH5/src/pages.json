@@ -71,6 +71,10 @@
     {
       "path": "pages/feed/publish",
       "style": { "navigationBarTitleText": "发布动态" }
+    },
+    {
+      "path": "pages/feed/list",
+      "style": { "navigationBarTitleText": "家族动态", "onReachBottomDistance": 80 }
     }
   ],
   "globalStyle": {

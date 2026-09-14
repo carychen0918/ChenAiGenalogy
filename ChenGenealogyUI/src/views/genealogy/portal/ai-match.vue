@@ -298,8 +298,8 @@ onMounted(() => {
 onBeforeUnmount(() => ctrl?.abort())
 </script>
 <style scoped>
-.ai-match { max-width: 860px; }
-.ai-match.logged { max-width: 1100px; display: flex; gap: 16px; align-items: stretch; }
+.ai-match { max-width: 1280px; }
+.ai-match.logged { max-width: 1680px; display: flex; gap: 16px; align-items: stretch; }
 .sidebar {
   width: 232px;
   flex-shrink: 0;

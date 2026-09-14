@@ -98,7 +98,6 @@ public class FeedService {
         Long userId = getLoginUserId();
         if (userId == null) {
             reqVO.setStatus(1);
-            reqVO.setType(1);
             reqVO.setAuthorUserId(null);
             return feedMapper.selectPage(reqVO);
         }

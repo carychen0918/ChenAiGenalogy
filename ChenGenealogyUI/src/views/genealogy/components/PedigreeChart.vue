@@ -55,13 +55,23 @@
           </div>
           <div class="canvas" :style="{ width: layout.width + 'px', height: layout.height + 'px' }">
             <svg class="wires" :width="layout.width" :height="layout.height">
-              <path v-for="(d, i) in layout.paths" :key="i" :d="d" />
+              <path v-for="(w, i) in layout.paths" :key="'n' + i" :d="w.d" />
+              <path v-for="(w, i) in lineageWires" :key="'h' + i" class="lineage" :d="w.d" />
             </svg>
             <button
               v-for="n in layout.nodes"
               :key="n.id"
               class="person"
-              :class="['house-' + (n.house || '0'), { female: n.gender === 2, me: isHighlight(n.id) }]"
+              :class="[
+                'house-' + (n.house || '0'),
+                {
+                  female: n.gender === 2,
+                  me: isHighlight(n.id),
+                  lineage: isLineagePerson(n.id),
+                  'lineage-self': isLineageSelf(n.id),
+                  'lineage-now': isLineageNow(n.id)
+                }
+              ]"
               :style="{ left: n.left + 'px', top: n.top + 'px' }"
               type="button"
             >
@@ -88,7 +98,15 @@ import { isSpouseOnlyMember } from '@/views/genealogy/utils/member'
 
 defineOptions({ name: 'PedigreeChart' })
 
-const props = defineProps<{ members: any[]; highlightId?: number | string | null }>()
+type Wire = { d: string; parentId: number; childIds: number[] }
+
+const props = defineProps<{
+  members: any[]
+  highlightId?: number | string | null
+  lineageIds?: (number | string)[]
+  lineageNowId?: number | string | null
+  lineageSelfId?: number | string | null
+}>()
 const emit = defineEmits<{ select: [member: any] }>()
 
 const UNIT = 108
@@ -392,27 +410,24 @@ const layout = computed(() => {
     }
   })
 
-  const paths: string[] = []
+  const paths: Wire[] = []
   flat.forEach((n) => {
     if (!n.children.length) return
     const parent = nodes.find((x) => x.id === n.id)
     if (!parent) return
     const kids = n.children
       .map((c) => nodes.find((x) => x.id === c.id))
-      .filter(Boolean) as { x: number; y: number }[]
+      .filter(Boolean) as { id: number; x: number; y: number }[]
     if (!kids.length) return
     const y1 = parent.y + NODE_H
     const yBar = Math.min(...kids.map((k) => k.y)) - BAR_GAP
     const x1 = parent.x
-    paths.push(`M ${x1} ${y1} V ${yBar}`)
-    if (kids.length === 1) {
-      paths.push(`M ${x1} ${yBar} H ${kids[0].x} V ${kids[0].y}`)
-    } else {
-      const minX = Math.min(...kids.map((k) => k.x))
-      const maxX = Math.max(...kids.map((k) => k.x))
-      paths.push(`M ${minX} ${yBar} H ${maxX}`)
-      kids.forEach((k) => paths.push(`M ${k.x} ${yBar} V ${k.y}`))
-    }
+    const childIds = kids.map((k) => k.id)
+    paths.push({ d: `M ${x1} ${y1} V ${yBar}`, parentId: n.id, childIds })
+    kids.forEach((k) => {
+      paths.push({ d: `M ${x1} ${yBar} H ${k.x}`, parentId: n.id, childIds: [k.id] })
+      paths.push({ d: `M ${k.x} ${yBar} V ${k.y}`, parentId: n.id, childIds: [k.id] })
+    })
   })
 
   const rowMap = new Map<number, { labels: string[]; classes: string[] }>()
@@ -459,7 +474,14 @@ const innerWidth = computed(() => AXIS_W + layout.value.width)
 const scaledWidth = computed(() => innerWidth.value * scale.value)
 const scaledHeight = computed(() => layout.value.height * scale.value)
 
+const lineageSet = computed(() => new Set((props.lineageIds || []).map((id) => Number(id))))
 const isHighlight = (id: number) => props.highlightId != null && Number(props.highlightId) === Number(id)
+const isLineagePerson = (id: number) => lineageSet.value.has(Number(id))
+const isLineageSelf = (id: number) => props.lineageSelfId != null && Number(props.lineageSelfId) === Number(id)
+const isLineageNow = (id: number) => props.lineageNowId != null && Number(props.lineageNowId) === Number(id)
+const isLineageWire = (w: Wire) =>
+  isLineagePerson(w.parentId) && w.childIds.some((id) => isLineagePerson(id))
+const lineageWires = computed(() => layout.value.paths.filter(isLineageWire))
 
 const locate = (id?: number | string | null) => {
   const targetId = id != null ? Number(id) : Number(props.highlightId)
@@ -619,6 +641,13 @@ defineExpose({ locate })
   stroke: #8d8273;
   stroke-width: 1.2;
 }
+.wires path.lineage {
+  stroke: #a63d2f;
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 3px rgba(166, 61, 47, 0.45));
+}
 .person {
   position: absolute;
   display: flex;
@@ -692,11 +721,32 @@ defineExpose({ locate })
   margin-top: 2px;
   border: 1px solid #e8dfcc;
 }
-.person.me {
+.person.me,
+.person.lineage {
   box-shadow: 0 0 0 3px rgba(166, 61, 47, 0.35);
   background: #fff5f2;
   border-radius: 4px;
   padding: 2px 4px 2px 2px;
+}
+.person.lineage .name {
+  color: #a63d2f;
+}
+.person.lineage-self .name {
+  font-weight: 800;
+}
+.person.lineage-now {
+  animation: lineage-pulse 0.55s ease;
+}
+@keyframes lineage-pulse {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 .person:hover .name {
   color: #a63d2f;

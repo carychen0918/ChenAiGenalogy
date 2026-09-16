@@ -3,7 +3,7 @@
     <div class="toolbar">
       <div>
         <div class="text-22px font-bold">族谱世系</div>
-        <div class="text-13px text-gray-500">按世代自上而下展开，按所属房区分字辈。树形图可滚轮缩放、按住拖动，点击姓名查看详情</div>
+        <div class="text-13px text-gray-500">按世代自上而下展开，按所属房区分字辈。选择成员后点寻根，沿父系直系逐级高亮，连线同步点亮</div>
       </div>
       <el-space wrap>
         <el-radio-group v-model="mode">
@@ -28,6 +28,34 @@
         <el-input v-model="kw" placeholder="搜索成员姓名 / 几世 / 字辈" class="!w-240px" clearable @keyup.enter="globalSearch" @clear="hits = []" />
       </el-space>
     </div>
+    <div class="seek-bar">
+      <span class="seek-label">寻根</span>
+      <el-select
+        v-model="seekId"
+        filterable
+        clearable
+        placeholder="选择成员姓名（同名会显示几世、父亲、生卒）"
+        class="!w-360px"
+      >
+        <el-option v-for="m in seekOptions" :key="m.id" :label="lineagePickLabel(m, memberById)" :value="m.id" />
+      </el-select>
+      <el-button type="primary" :disabled="!seekId" :loading="seeking" @click="seekRoot()">寻根</el-button>
+      <el-button v-if="lineageIds.length" @click="clearLineage">清除高亮</el-button>
+    </div>
+    <div v-if="lineagePath.length" class="path-bar lineage-bar">
+      <span class="text-13px text-gray-500 mr-8px">直系寻根</span>
+      <el-space wrap>
+        <el-tag
+          v-for="(m, i) in lineagePath"
+          :key="m.id"
+          :type="Number(m.id) === Number(lineageNowId) ? 'danger' : ''"
+          class="cursor-pointer"
+          @click="chartRef?.locate?.(m.id)"
+        >
+          {{ i ? '↑ ' : '' }}{{ m.generationNo ? m.generationNo + '世 · ' : '' }}{{ m.name }}
+        </el-tag>
+      </el-space>
+    </div>
     <div v-if="path.length" class="path-bar">
       <span class="text-13px text-gray-500 mr-8px">关系路径</span>
       <el-space wrap>
@@ -44,12 +72,31 @@
       <el-empty v-if="!filtered.length" :description="'未找到成员“' + kw + '”'" />
     </div>
     <div v-else v-loading="loading">
-      <PedigreeChart v-if="mode === 'tree'" ref="chartRef" :members="list" :highlight-id="meId" @select="openCard" />
+      <PedigreeChart
+        v-if="mode === 'tree'"
+        ref="chartRef"
+        :members="list"
+        :highlight-id="meId"
+        :lineage-ids="lineageIds"
+        :lineage-now-id="lineageNowId"
+        :lineage-self-id="lineageSelfId"
+        @select="openCard"
+      />
       <div v-else class="list-wrap">
         <div v-for="gen in grouped" :key="gen.no" class="mb-16px">
           <div class="text-12px text-gray-500 mb-8px">{{ gen.no }}世{{ gen.words ? ' · ' + gen.words : '' }}</div>
           <div class="flex flex-wrap gap-12px">
-            <div v-for="m in gen.nodes" :key="m.id" class="node" :class="{ me: meId && Number(m.id) === Number(meId) }" @click="openCard(m)">
+            <div
+              v-for="m in gen.nodes"
+              :key="m.id"
+              class="node"
+              :class="{
+                me: meId && Number(m.id) === Number(meId),
+                lineage: lineageIds.includes(Number(m.id)),
+                'lineage-self': Number(m.id) === Number(lineageSelfId)
+              }"
+              @click="openCard(m)"
+            >
               <el-avatar :size="36" :src="m.avatar">{{ m.name?.[0] }}</el-avatar>
               <div class="font-bold mt-6px">{{ m.name }}</div>
               <div class="text-12px text-gray-500">{{ formatGenerationWord(m) ? formatGenerationWord(m) + '字辈 · ' : '' }}{{ formatLifeSpan(m) }}</div>
@@ -86,6 +133,7 @@
         </div>
       </div>
       <template #footer>
+        <el-button v-if="card?.id" @click="seekFromCard">从此人寻根</el-button>
         <el-button v-if="meId && card?.id && Number(card.id) !== Number(meId)" @click="viewRelation">查看与我的关系</el-button>
         <el-button type="primary" @click="$router.push('/portal/member?id=' + card.id)">查看详情</el-button>
       </template>
@@ -96,7 +144,8 @@
 import { GenealogyMemberApi, GenealogyShowcaseApi } from '@/api/genealogy'
 import PedigreeChart from '@/views/genealogy/components/PedigreeChart.vue'
 import { formatGenerationWord, formatMemberGeneration } from '@/views/genealogy/utils/generation'
-import { formatLifeSpan, isSpouseOnlyMember } from '@/views/genealogy/utils/member'
+import { formatLifeSpan, isSpouseOnlyMember, lineagePickLabel, paternalLineage } from '@/views/genealogy/utils/member'
+import { ElMessage } from 'element-plus'
 
 defineOptions({ name: 'PortalTree' })
 const loading = ref(false)
@@ -112,6 +161,14 @@ const relateOptions = ref<any[]>([])
 const relateLoading = ref(false)
 const path = ref<any[]>([])
 const hits = ref<any[]>([])
+const seekId = ref<number>()
+const seeking = ref(false)
+const lineageIds = ref<number[]>([])
+const lineageNowId = ref<number | null>(null)
+const lineageSelfId = ref<number | null>(null)
+const lineagePath = ref<any[]>([])
+let seekSeq = 0
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 const openCard = async (m: any) => {
   cardVisible.value = true
@@ -139,6 +196,19 @@ const grouped = computed(() => {
     .map((row) => ({ no: row.no, words: [...row.words].join('、') + (row.words.size ? '字辈' : ''), nodes: row.nodes }))
 })
 const allMembers = ref<any[]>([])
+const memberById = computed(() => {
+  const map = new Map<number, any>()
+  list.value.forEach((m) => map.set(Number(m.id), m))
+  allMembers.value.forEach((m) => {
+    if (!map.has(Number(m.id))) map.set(Number(m.id), m)
+  })
+  return map
+})
+const seekOptions = computed(() =>
+  [...list.value]
+    .filter((m) => m?.id && m.name && !isSpouseOnlyMember(m))
+    .sort((a, b) => String(a.name).localeCompare(String(b.name), 'zh') || (a.generationNo || 0) - (b.generationNo || 0))
+)
 const filtered = computed(() => {
   const q = kw.value.trim()
   if (!q) return []
@@ -187,6 +257,51 @@ const viewRelation = async () => {
   await loadRelation(card.value.id)
   cardVisible.value = false
 }
+const clearLineage = () => {
+  seekSeq += 1
+  seeking.value = false
+  lineageIds.value = []
+  lineageNowId.value = null
+  lineageSelfId.value = null
+  lineagePath.value = []
+}
+const seekRoot = async (id?: number) => {
+  const target = typeof id === 'number' ? id : seekId.value
+  if (!target) return
+  kw.value = ''
+  hits.value = []
+  mode.value = 'tree'
+  const pool = list.value.length ? list.value : allMembers.value
+  const chain = paternalLineage(target, pool)
+  if (!chain.length) {
+    ElMessage.warning('谱上未找到该成员')
+    return
+  }
+  const seq = ++seekSeq
+  seekId.value = Number(target)
+  lineageSelfId.value = Number(target)
+  lineagePath.value = chain
+  lineageIds.value = []
+  lineageNowId.value = null
+  seeking.value = true
+  await nextTick()
+  for (const m of chain) {
+    if (seq !== seekSeq) return
+    lineageIds.value = [...lineageIds.value, Number(m.id)]
+    lineageNowId.value = Number(m.id)
+    await nextTick()
+    chartRef.value?.locate?.(m.id)
+    await wait(520)
+  }
+  if (seq !== seekSeq) return
+  lineageNowId.value = null
+  seeking.value = false
+}
+const seekFromCard = async () => {
+  if (!card.value?.id) return
+  cardVisible.value = false
+  await seekRoot(Number(card.value.id))
+}
 onMounted(async () => {
   loading.value = true
   try {
@@ -202,11 +317,15 @@ onMounted(async () => {
 })
 </script>
 <style scoped>
-.toolbar { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 16px; align-items: flex-start; flex-wrap: wrap; }
+.toolbar { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 12px; align-items: flex-start; flex-wrap: wrap; }
+.seek-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 12px; }
+.seek-label { font-weight: 700; color: #a63d2f; }
 .path-bar { background: #fffdf7; border: 1px solid #e8dfcc; border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; }
+.lineage-bar { border-color: #e8c4bc; background: #fff8f5; }
 .list-wrap { background: #fffdf7; border: 1px solid #e8dfcc; border-radius: 12px; padding: 20px; }
 .node { min-width: 108px; padding: 10px 14px; border: 1px solid #ddd2bc; border-radius: 10px; text-align: center; cursor: pointer; background: #fff; display: flex; flex-direction: column; align-items: center; }
-.node.me { border-color: #a63d2f; background: #fff5f2; }
+.node.me, .node.lineage { border-color: #a63d2f; background: #fff5f2; }
+.node.lineage-self { box-shadow: 0 0 0 2px rgba(166, 61, 47, 0.35); }
 .node:hover { border-color: #a63d2f; }
 .intro { line-height: 1.7; color: #5c5348; white-space: pre-wrap; max-height: 160px; overflow: auto; }
 .thick-head { display: flex; gap: 16px; align-items: flex-start; }

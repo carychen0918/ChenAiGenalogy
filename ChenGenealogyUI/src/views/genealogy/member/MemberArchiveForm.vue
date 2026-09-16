@@ -1,6 +1,37 @@
 <template>
   <el-drawer v-model="visible" :title="title" size="640px" destroy-on-close>
     <div v-loading="loading">
+      <el-card class="mb-16px" header="家庭小谱（只读 · 上三代下两代）">
+        <div class="mf" v-if="hasMini">
+          <div v-if="mini.ancestors?.length" class="mf-row">
+            <span class="mf-k">上三代</span>
+            <el-space wrap>
+              <el-tag v-for="a in mini.ancestors" :key="a.id">{{ a.name }}</el-tag>
+            </el-space>
+          </div>
+          <div v-if="mini.mother" class="mf-row"><span class="mf-k">母亲</span><el-tag>{{ mini.mother.name }}</el-tag></div>
+          <div v-if="(mini.spouses || []).length || (mini.siblings || []).length" class="mf-row">
+            <span class="mf-k">同辈</span>
+            <el-space wrap>
+              <el-tag v-for="s in mini.spouses || []" :key="'sp'+s.id" type="warning">偶 {{ s.name }}</el-tag>
+              <el-tag v-for="s in mini.siblings || []" :key="'sb'+s.id" type="info">兄/弟/姐/妹 {{ s.name }}</el-tag>
+            </el-space>
+          </div>
+          <div v-if="(mini.children || []).length" class="mf-row">
+            <span class="mf-k">下一代</span>
+            <el-space wrap>
+              <el-tag v-for="c in mini.children" :key="c.id" type="success">子女 {{ c.name }}</el-tag>
+            </el-space>
+          </div>
+          <div v-if="(mini.grandchildren || []).length" class="mf-row">
+            <span class="mf-k">下两代</span>
+            <el-space wrap>
+              <el-tag v-for="c in mini.grandchildren" :key="c.id">孙 {{ c.name }}</el-tag>
+            </el-space>
+          </div>
+        </div>
+        <div v-else class="text-12px text-gray-500">暂无家庭关系</div>
+      </el-card>
       <el-card class="mb-16px" header="生平简介">
         <el-input
           v-model="form.intro"
@@ -16,6 +47,7 @@
         <div class="mt-8px text-12px text-gray-500">支持 jpg / png，最多 20 张。修改后请点底部保存。</div>
       </el-card>
       <el-card header="事迹与荣誉">
+        <el-alert class="mb-12px" type="info" :closable="false" title="此处录入事迹。若需在客户端首页置顶，请到「内容管理 → 前台客厅」勾选。" />
         <el-button type="primary" class="mb-12px" @click="openDeed()">新增事迹</el-button>
         <div v-for="d in form.deeds || []" :key="d.id" class="mb-12px pb-12px border-b last:border-0">
           <div class="flex justify-between gap-12px">
@@ -63,7 +95,7 @@
   </el-drawer>
 </template>
 <script setup lang="ts">
-import { GenealogyMemberApi } from '@/api/genealogy'
+import { GenealogyMemberApi, GenealogyShowcaseApi } from '@/api/genealogy'
 
 defineOptions({ name: 'GenealogyMemberArchiveForm' })
 const message = useMessage()
@@ -73,6 +105,10 @@ const loading = ref(false)
 const saving = ref(false)
 const title = ref('维护档案')
 const form = ref<any>({ intro: '', photoUrls: [], deeds: [] })
+const mini = ref<any>({})
+const hasMini = computed(() =>
+  !!(mini.value?.ancestors?.length || mini.value?.mother || mini.value?.spouses?.length || mini.value?.siblings?.length || mini.value?.children?.length || mini.value?.grandchildren?.length)
+)
 const deedVisible = ref(false)
 const deedSaving = ref(false)
 const deedForm = ref<any>({})
@@ -86,9 +122,15 @@ const load = async (id: number) => {
       name: data.name,
       intro: data.intro || '',
       photoUrls: data.photoUrls || [],
-      deeds: data.deeds || []
+      deeds: data.deeds || [],
+      fatherName: data.fatherName,
+      motherName: data.motherName,
+      spouseNames: data.spouseNames || [],
+      siblings: data.siblings || [],
+      children: data.children || []
     }
     title.value = `维护档案 · ${data.name || ''}`
+    mini.value = (await GenealogyShowcaseApi.miniFamily(id).catch(() => null)) || {}
   } finally {
     loading.value = false
   }
@@ -151,3 +193,7 @@ const removeDeed = async (row: any) => {
 
 defineExpose({ open })
 </script>
+<style scoped>
+.mf-row { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 8px; }
+.mf-k { width: 48px; flex-shrink: 0; color: #8b8273; font-size: 12px; line-height: 24px; }
+</style>

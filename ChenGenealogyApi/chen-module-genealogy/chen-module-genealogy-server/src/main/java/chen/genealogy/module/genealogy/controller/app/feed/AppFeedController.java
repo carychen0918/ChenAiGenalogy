@@ -36,9 +36,9 @@ public class AppFeedController {
 
     @GetMapping("/page")
     @PermitAll
-    @Operation(summary = "动态分页")
+    @Operation(summary = "前台动态分页，仅已发布")
     public CommonResult<PageResult<FeedDO>> page(@Valid FeedPageReqVO reqVO) {
-        return success(feedService.getPage(reqVO));
+        return success(feedService.getPublicPage(reqVO));
     }
 
     @PostMapping("/like")
@@ -55,6 +55,7 @@ public class AppFeedController {
     }
 
     @GetMapping("/comment/list")
+    @PermitAll
     @Operation(summary = "已审核评论")
     public CommonResult<List<FeedCommentDO>> comments(@RequestParam("feedId") Long feedId) {
         return success(feedService.approvedComments(feedId));

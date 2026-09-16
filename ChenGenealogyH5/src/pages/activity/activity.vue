@@ -5,6 +5,8 @@
       <view class="muted">{{ a.place }} · {{ formatDate(a.startTime) }}</view>
       <view>{{ a.content }}</view>
       <view v-if="a.maxPeople">名额 {{ a.registeredCount || 0 }}/{{ a.maxPeople }}</view>
+      <amap-view v-if="a.longitude && a.latitude" class="map" :points="mapPoints" height="320px" />
+      <button v-if="a.longitude && a.latitude" class="btn-primary" style="margin-top: 20rpx" @click="nav">高德导航前往</button>
     </view>
     <view class="card" v-if="!registered">
       <view class="card-title">报名参加</view>
@@ -19,10 +21,12 @@
   </view>
 </template>
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { GenealogyActivityApi } from '@/api/genealogy'
-import { formatDate, requireLogin } from '@/utils'
+import { formatDate, openNav, requireLogin } from '@/utils'
+import AmapView from '@/components/amap-view.vue'
+import type { AmapPoint } from '@/utils/amap'
 
 const a = ref<any>({})
 const peopleCount = ref('1')
@@ -30,6 +34,16 @@ const mobile = ref('')
 const loading = ref(false)
 const registered = ref(false)
 const id = ref(0)
+const mapPoints = computed<AmapPoint[]>(() => {
+  if (!a.value?.longitude || !a.value?.latitude) return []
+  return [{
+    lng: Number(a.value.longitude),
+    lat: Number(a.value.latitude),
+    title: a.value.place || a.value.title,
+    content: a.value.gatherPlace || ''
+  }]
+})
+const nav = () => openNav(a.value.longitude, a.value.latitude, a.value.place || a.value.title)
 
 onLoad(async (q) => {
   if (!requireLogin()) return
@@ -61,4 +75,5 @@ const register = async () => {
 </script>
 <style scoped>
 .input { background: #f4ece0; border-radius: 12rpx; padding: 22rpx 24rpx; margin-bottom: 20rpx; }
+.map { margin-top: 20rpx; }
 </style>

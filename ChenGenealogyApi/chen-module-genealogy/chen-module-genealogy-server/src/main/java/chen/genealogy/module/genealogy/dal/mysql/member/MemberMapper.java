@@ -38,6 +38,10 @@ public interface MemberMapper extends BaseMapperX<MemberDO> {
         return selectList(MemberDO::getFatherId, fatherId);
     }
 
+    default List<MemberDO> selectByMotherId(Long motherId) {
+        return selectList(MemberDO::getMotherId, motherId);
+    }
+
     default MemberDO selectByUserId(Long userId) {
         return selectOne(new LambdaQueryWrapperX<MemberDO>()
                 .eq(MemberDO::getUserId, userId)

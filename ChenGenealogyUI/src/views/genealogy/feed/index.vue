@@ -6,16 +6,21 @@
     </el-tabs>
     <div v-show="tab === 'feed'">
       <el-button type="primary" class="mb-8px" @click="edit()">发布公告</el-button>
+      <el-alert class="mb-8px" type="warning" :closable="false" title="下线后仅管理端可见，客户端和 APP 不再展示该公告。" />
       <el-table :data="list">
         <el-table-column label="类型" prop="type"><template #default="s"><dict-tag :type="DICT_TYPE.GENEALOGY_FEED_TYPE" :value="s.row.type" /></template></el-table-column>
         <el-table-column label="标题" prop="title" />
+        <el-table-column label="配图" width="90">
+          <template #default="s">{{ (s.row.images || []).length }} 张</template>
+        </el-table-column>
         <el-table-column label="状态" prop="status"><template #default="s"><dict-tag :type="DICT_TYPE.GENEALOGY_FEED_STATUS" :value="s.row.status" /></template></el-table-column>
         <el-table-column label="操作" width="260">
           <template #default="s">
             <el-button v-if="s.row.status === 0" link type="success" @click="audit(s.row.id, 1)">通过</el-button>
             <el-button v-if="s.row.status === 0" link type="danger" @click="audit(s.row.id, 2)">驳回</el-button>
+            <el-button v-if="s.row.status === 1" link @click="offline(s.row.id)">下线</el-button>
+            <el-button v-if="s.row.status === 3" link type="success" @click="audit(s.row.id, 1)">重新上线</el-button>
             <el-button link @click="pin(s.row)">{{ s.row.pinned ? '取消置顶' : '置顶' }}</el-button>
-            <el-button link @click="offline(s.row.id)">下线</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -39,6 +44,7 @@
       <el-form-item label="类型"><el-select v-model="form.type"><el-option :value="1" label="公告" /><el-option :value="2" label="动态" /><el-option :value="3" label="公示" /></el-select></el-form-item>
       <el-form-item label="标题"><el-input v-model="form.title" /></el-form-item>
       <el-form-item label="内容"><el-input type="textarea" v-model="form.content" /></el-form-item>
+      <el-form-item label="图片"><UploadImgs v-model="form.images" :limit="9" /></el-form-item>
       <el-form-item label="置顶"><el-switch v-model="form.pinned" /></el-form-item>
     </el-form>
     <template #footer><el-button type="primary" @click="save">发布</el-button></template>
@@ -58,7 +64,7 @@ const load = async () => {
   list.value = (await GenealogyFeedApi.page({ pageNo: 1, pageSize: 50 })).list
   comments.value = (await GenealogyFeedApi.commentPage({ pageNo: 1, pageSize: 50, status: 0 })).list
 }
-const edit = () => { form.value = { type: 1, pinned: true }; visible.value = true }
+const edit = () => { form.value = { type: 1, pinned: true, images: [] }; visible.value = true }
 const save = async () => { await GenealogyFeedApi.create(form.value); message.success('已发布'); visible.value = false; await load() }
 const audit = async (id: number, status: number) => { await GenealogyFeedApi.audit(id, status); message.success('已处理'); await load() }
 const pin = async (row: any) => { await GenealogyFeedApi.pin(row.id, !row.pinned); await load() }

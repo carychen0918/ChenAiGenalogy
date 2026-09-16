@@ -40,6 +40,16 @@ export const openNav = (lng?: number, lat?: number, name?: string) => {
     uni.showToast({ title: '地点信息待管理员配置', icon: 'none' })
     return
   }
+  const url = `https://uri.amap.com/navigation?to=${Number(lng)},${Number(lat)},${encodeURIComponent(name || '目的地')}&mode=car&src=chengenealogy&callnative=1`
+  const g = globalThis as any
+  if (g.plus?.runtime?.openURL) {
+    g.plus.runtime.openURL(url)
+    return
+  }
+  if (typeof window !== 'undefined' && window.open) {
+    window.open(url)
+    return
+  }
   uni.openLocation({ longitude: Number(lng), latitude: Number(lat), name: name || '目的地' })
 }
 

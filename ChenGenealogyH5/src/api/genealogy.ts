@@ -51,13 +51,30 @@ export const GenealogyActivityApi = {
     request.get({ url: '/genealogy/activity/worship/list', params: { activityId } })
 }
 
+export const GenealogyShowcaseApi = {
+  home: () => request.get({ url: '/genealogy/showcase/home', isToken: false }),
+  gallery: (limit?: number) =>
+    request.get({ url: '/genealogy/showcase/gallery', params: { limit }, isToken: false }),
+  calendar: (year?: number, month?: number) =>
+    request.get({ url: '/genealogy/showcase/calendar', params: { year, month }, isToken: false }),
+  deeds: () => request.get({ url: '/genealogy/showcase/deeds', isToken: false }),
+  scholarshipWall: () => request.get({ url: '/genealogy/showcase/scholarship-wall', isToken: false }),
+  search: (keyword: string) =>
+    request.get({ url: '/genealogy/showcase/search', params: { keyword }, isToken: false }),
+  relation: (fromId: number, toId: number) =>
+    request.get({ url: '/genealogy/showcase/relation', params: { fromId, toId } }),
+  miniFamily: (memberId: number) =>
+    request.get({ url: '/genealogy/showcase/mini-family', params: { memberId }, isToken: false })
+}
+
 export const GenealogyFeedApi = {
   create: (data: any) => request.post({ url: '/genealogy/feed/create', data }),
   page: (params: any) => request.get({ url: '/genealogy/feed/page', params }),
   like: (id: number) => request.post({ url: '/genealogy/feed/like', params: { id } }),
   comment: (feedId: number, content: string) =>
     request.post({ url: '/genealogy/feed/comment/create', params: { feedId, content } }),
-  comments: (feedId: number) => request.get({ url: '/genealogy/feed/comment/list', params: { feedId } })
+  comments: (feedId: number) =>
+    request.get({ url: '/genealogy/feed/comment/list', params: { feedId }, isToken: false })
 }
 
 const CLIENT_KEY = 'genealogy-ai-match-client-id'

@@ -20,6 +20,18 @@
       <view class="card-title">祖先事迹</view>
       <view class="muted">先贤生平 · 家族记忆</view>
     </view>
+    <view class="card" @click="go('/pages/gallery/gallery')">
+      <view class="card-title">族影长廊</view>
+      <view class="muted">成员照片 · 既有影像</view>
+    </view>
+    <view class="card" @click="go('/pages/calendar/calendar')">
+      <view class="card-title">家族日历</view>
+      <view class="muted">寿辰忌日 · 清明活动</view>
+    </view>
+    <view class="card" @click="go('/pages/search/search')">
+      <view class="card-title">找族人</view>
+      <view class="muted">姓名 · 几世 · 字辈</view>
+    </view>
     <view class="card">
       <view class="card-title">姓氏源流简介</view>
       <view class="muted">{{ family.intro || '内容持续补充中' }}</view>

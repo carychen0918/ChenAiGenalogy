@@ -75,6 +75,18 @@
     {
       "path": "pages/feed/list",
       "style": { "navigationBarTitleText": "家族动态", "onReachBottomDistance": 80 }
+    },
+    {
+      "path": "pages/gallery/gallery",
+      "style": { "navigationBarTitleText": "族影长廊" }
+    },
+    {
+      "path": "pages/calendar/calendar",
+      "style": { "navigationBarTitleText": "家族日历" }
+    },
+    {
+      "path": "pages/search/search",
+      "style": { "navigationBarTitleText": "找族人" }
     }
   ],
   "globalStyle": {

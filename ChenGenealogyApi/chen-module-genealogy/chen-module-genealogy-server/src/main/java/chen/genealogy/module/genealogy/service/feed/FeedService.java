@@ -94,6 +94,12 @@ public class FeedService {
         feedMapper.updateById(feed);
     }
 
+    public PageResult<FeedDO> getPublicPage(FeedPageReqVO reqVO) {
+        reqVO.setStatus(1);
+        reqVO.setAuthorUserId(null);
+        return feedMapper.selectPage(reqVO);
+    }
+
     public PageResult<FeedDO> getPage(FeedPageReqVO reqVO) {
         Long userId = getLoginUserId();
         if (userId == null) {
@@ -103,11 +109,13 @@ public class FeedService {
         }
         boolean admin = Boolean.TRUE.equals(permissionApi.hasAnyPermissions(userId, "genealogy:feed:query").getCheckedData());
         if (!admin) {
-            if (reqVO.getAuthorUserId() == null) {
+            boolean own = reqVO.getAuthorUserId() != null && reqVO.getAuthorUserId().equals(userId);
+            if (!own) {
                 reqVO.setStatus(1);
-            } else {
-                reqVO.setAuthorUserId(userId);
+                reqVO.setAuthorUserId(null);
             }
+        } else if (Integer.valueOf(1).equals(reqVO.getStatus())) {
+            reqVO.setStatus(1);
         }
         return feedMapper.selectPage(reqVO);
     }

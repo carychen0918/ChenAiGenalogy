@@ -648,6 +648,12 @@ public class GenealogyMemberServiceImpl implements MemberService {
         if (detail) {
             vo.setDeeds(BeanUtils.toBean(memberDeedMapper.selectListByMemberId(member.getId()), MemberDeedRespVO.class));
             vo.setChildren(memberMapper.selectByFatherId(member.getId()).stream().map(this::toSimple).collect(Collectors.toList()));
+            if (member.getFatherId() != null) {
+                vo.setSiblings(memberMapper.selectByFatherId(member.getFatherId()).stream()
+                        .filter(s -> !s.getId().equals(member.getId()))
+                        .map(this::toSimple)
+                        .collect(Collectors.toList()));
+            }
         }
         vo.setDescendantCount((int) memberMapper.selectDescendantCount(member.getId()));
         if (member.getUserId() != null) {

@@ -68,6 +68,12 @@ public class FeedController {
         return success(feedService.getPage(reqVO));
     }
 
+    @GetMapping("/front-page")
+    @PermitAll
+    public CommonResult<PageResult<FeedDO>> frontPage(@Valid FeedPageReqVO reqVO) {
+        return success(feedService.getPublicPage(reqVO));
+    }
+
     @PostMapping("/like")
     public CommonResult<Boolean> like(@RequestParam("id") Long id) {
         feedService.like(id);
@@ -93,6 +99,7 @@ public class FeedController {
     }
 
     @GetMapping("/comment/list")
+    @PermitAll
     public CommonResult<List<FeedCommentDO>> comments(@RequestParam("feedId") Long feedId) {
         return success(feedService.approvedComments(feedId));
     }

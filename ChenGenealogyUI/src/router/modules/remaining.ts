@@ -1140,6 +1140,18 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: { hidden: true, canTo: true, title: '温蒂坟地导航', noTagsView: true, requiresAuth: true }
       },
       {
+        path: 'gallery',
+        component: () => import('@/views/genealogy/portal/gallery.vue'),
+        name: 'PortalGallery',
+        meta: { hidden: true, canTo: true, title: '族影长廊', noTagsView: true }
+      },
+      {
+        path: 'calendar',
+        component: () => import('@/views/genealogy/portal/calendar.vue'),
+        name: 'PortalCalendar',
+        meta: { hidden: true, canTo: true, title: '家族日历', noTagsView: true }
+      },
+      {
         path: 'profile',
         component: () => import('@/views/genealogy/portal/profile.vue'),
         name: 'PortalProfile',

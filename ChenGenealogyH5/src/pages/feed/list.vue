@@ -5,9 +5,20 @@
       <text class="feed-title">{{ f.title }}</text>
       <view v-if="f.authorName" class="muted author">{{ f.authorName }}</view>
       <view class="muted content">{{ f.content }}</view>
+      <view v-if="f.images?.length" class="photos">
+        <image v-for="(img, i) in f.images" :key="img + i" :src="img" class="photo" mode="aspectFill" @click="preview(f.images, i)" />
+      </view>
       <view class="feed-actions">
         <text @click="like(f)">赞 {{ f.likeCount || 0 }}</text>
-        <text @click="comment(f)">评论 {{ f.commentCount || 0 }}</text>
+        <text @click="toggleComments(f)">评论 {{ f.commentCount || 0 }}</text>
+      </view>
+      <view v-if="f._open" class="comments">
+        <view v-for="c in f._comments || []" :key="c.id" class="comment">
+          <text class="name">{{ c.userName || '族人' }}</text>
+          <text>{{ c.content }}</text>
+        </view>
+        <view v-if="!(f._comments || []).length" class="muted">暂无已审评论</view>
+        <button class="ghost" @click="comment(f)">写评论</button>
       </view>
     </view>
     <view class="muted empty">{{ footer }}</view>
@@ -79,6 +90,14 @@ onShow(() => {
 })
 onReachBottom(() => load())
 
+const preview = (urls: string[], i: number) => uni.previewImage({ urls, current: urls[i] })
+const toggleComments = async (f: any) => {
+  f._open = !f._open
+  if (f._open && !f._comments) {
+    try { f._comments = (await GenealogyFeedApi.comments(f.id)) || [] } catch { f._comments = [] }
+  }
+}
+
 const like = async (f: any) => {
   if (!ensureLogin()) return
   await GenealogyFeedApi.like(f.id)
@@ -105,5 +124,11 @@ const comment = (f: any) => {
 .author { margin-top: 8rpx; }
 .content { margin-top: 12rpx; white-space: pre-wrap; line-height: 1.6; }
 .feed-actions { margin-top: 16rpx; color: #a63d2f; font-size: 24rpx; display: flex; gap: 32rpx; }
+.photos { display: flex; flex-wrap: wrap; gap: 12rpx; margin-top: 12rpx; }
+.photo { width: 160rpx; height: 160rpx; border-radius: 8rpx; background: #f4ece0; }
+.comments { margin-top: 12rpx; background: #f8f3e8; border-radius: 12rpx; padding: 12rpx 16rpx; }
+.comment { padding: 8rpx 0; font-size: 24rpx; }
+.comment .name { font-weight: 700; margin-right: 8rpx; }
+.ghost { margin-top: 12rpx; background: #fffdf7; color: #a63d2f; border: 1px solid #e8dfcc; font-size: 24rpx; }
 .empty { text-align: center; padding: 24rpx 0 48rpx; }
 </style>

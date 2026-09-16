@@ -45,6 +45,7 @@ public class MemberRespVO {
     private LocalDateTime createTime;
     private List<MemberDeedRespVO> deeds;
     private List<MemberSimpleVO> children;
+    private List<MemberSimpleVO> siblings;
     private Integer descendantCount;
     @Schema(description = "登录账号")
     private String loginUsername;

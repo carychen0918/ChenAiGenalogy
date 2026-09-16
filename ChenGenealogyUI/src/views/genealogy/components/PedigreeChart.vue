@@ -61,10 +61,12 @@
               v-for="n in layout.nodes"
               :key="n.id"
               class="person"
-              :class="['house-' + (n.house || '0'), { female: n.gender === 2 }]"
+              :class="['house-' + (n.house || '0'), { female: n.gender === 2, me: isHighlight(n.id) }]"
               :style="{ left: n.left + 'px', top: n.top + 'px' }"
               type="button"
             >
+              <img v-if="n.avatar" class="avatar" :src="n.avatar" alt="" />
+              <span v-else class="avatar-fallback">{{ n.name?.[0] }}</span>
               <span class="name">{{ n.name }}</span>
               <span v-if="n.spouseText" class="spouse">{{ n.spouseText }}</span>
               <span v-if="n.word" class="word">{{ n.word }}</span>
@@ -86,7 +88,7 @@ import { isSpouseOnlyMember } from '@/views/genealogy/utils/member'
 
 defineOptions({ name: 'PedigreeChart' })
 
-const props = defineProps<{ members: any[] }>()
+const props = defineProps<{ members: any[]; highlightId?: number | string | null }>()
 const emit = defineEmits<{ select: [member: any] }>()
 
 const UNIT = 108
@@ -375,6 +377,7 @@ const layout = computed(() => {
       id: n.id,
       member: m,
       name: m.name,
+      avatar: m.avatar || (m.photoUrls && m.photoUrls[0]) || '',
       gender: m.gender,
       word: m.generationWord || '',
       house,
@@ -455,6 +458,22 @@ const layout = computed(() => {
 const innerWidth = computed(() => AXIS_W + layout.value.width)
 const scaledWidth = computed(() => innerWidth.value * scale.value)
 const scaledHeight = computed(() => layout.value.height * scale.value)
+
+const isHighlight = (id: number) => props.highlightId != null && Number(props.highlightId) === Number(id)
+
+const locate = (id?: number | string | null) => {
+  const targetId = id != null ? Number(id) : Number(props.highlightId)
+  if (!targetId) return false
+  const n = layout.value.nodes.find((x) => Number(x.id) === targetId)
+  const el = viewportRef.value
+  if (!n || !el) return false
+  const left = (AXIS_W + n.left) * scale.value - el.clientWidth / 2 + 40
+  const top = n.top * scale.value - el.clientHeight / 2 + 40
+  el.scrollTo({ left: Math.max(0, left), top: Math.max(0, top), behavior: 'smooth' })
+  return true
+}
+
+defineExpose({ locate })
 </script>
 
 <style scoped>
@@ -656,6 +675,28 @@ const scaledHeight = computed(() => layout.value.height * scale.value)
   max-height: 110px;
   overflow: hidden;
   padding-top: 10px;
+}
+.person .avatar,
+.person .avatar-fallback {
+  width: 20px;
+  height: 24px;
+  object-fit: cover;
+  border-radius: 2px;
+  flex-shrink: 0;
+  background: #f4ece0;
+  color: #a63d2f;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+  border: 1px solid #e8dfcc;
+}
+.person.me {
+  box-shadow: 0 0 0 3px rgba(166, 61, 47, 0.35);
+  background: #fff5f2;
+  border-radius: 4px;
+  padding: 2px 4px 2px 2px;
 }
 .person:hover .name {
   color: #a63d2f;

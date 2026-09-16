@@ -20,9 +20,10 @@
           {{ full ? '已满，加入候补' : '我要报名' }}
         </el-button>
         <el-button class="ml-8px" :disabled="!act.longitude" @click="nav">
-          {{ act.longitude ? '导航前往' : '地点信息待管理员配置' }}
+          {{ act.longitude ? '高德导航前往' : '地点信息待管理员配置' }}
         </el-button>
       </div>
+      <AmapView v-if="act.longitude && act.latitude" class="mt-16px" :points="mapPoints" height="320px" />
     </el-card>
     <el-card class="mt-16px" header="祭扫记录">
       <el-space class="mb-12px">
@@ -76,6 +77,8 @@
 <script setup lang="ts">
 import { DICT_TYPE } from '@/utils/dict'
 import { GenealogyActivityApi, GenealogyMemberApi } from '@/api/genealogy'
+import AmapView from '@/views/genealogy/components/AmapView.vue'
+import { openAmapNav, type AmapPoint } from '@/utils/amap'
 defineOptions({ name: 'PortalActivity' })
 const route = useRoute()
 const message = useMessage()
@@ -89,6 +92,15 @@ const reg = ref({ peopleCount: 1, mobile: '', needBus: false })
 const worship = ref<{ content: string; images: string[] }>({ content: '', images: [] })
 const online = ref({ ancestorName: '', gift: '蜡烛', content: '' })
 const full = computed(() => act.value?.maxCount && (act.value.joinedCount || 0) >= act.value.maxCount)
+const mapPoints = computed<AmapPoint[]>(() => {
+  if (!act.value?.longitude || !act.value?.latitude) return []
+  return [{
+    lng: Number(act.value.longitude),
+    lat: Number(act.value.latitude),
+    title: act.value.place || act.value.title,
+    content: [act.value.gatherPlace, act.value.address].filter(Boolean).join('\n')
+  }]
+})
 const format = (t: number) => (t ? new Date(t).toLocaleString() : '')
 const load = async () => {
   const id = Number(route.query.id)
@@ -132,8 +144,7 @@ const doOnline = async () => {
   await load()
 }
 const nav = () => {
-  const url = `https://uri.amap.com/navigation?to=${act.value.longitude},${act.value.latitude},${encodeURIComponent(act.value.place || '祭祖地点')}&mode=car`
-  window.open(url)
+  openAmapNav(act.value.longitude, act.value.latitude, act.value.place || '祭祖地点')
 }
 onMounted(load)
 </script>

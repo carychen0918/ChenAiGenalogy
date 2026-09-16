@@ -124,6 +124,7 @@ export const GenealogyFeedApi = {
   audit: (id: number, status: number) => request.put({ url: '/genealogy/feed/audit', params: { id, status } }),
   pin: (id: number, pinned: boolean) => request.put({ url: '/genealogy/feed/pin', params: { id, pinned } }),
   page: (params: any) => request.get({ url: '/genealogy/feed/page', params }),
+  frontPage: (params: any) => request.get({ url: '/genealogy/feed/front-page', params }),
   like: (id: number) => request.post({ url: '/genealogy/feed/like?id=' + id }),
   comment: (feedId: number, content: string) =>
     request.post({ url: '/genealogy/feed/comment/create', params: { feedId, content } }),
@@ -135,6 +136,22 @@ export const GenealogyFeedApi = {
 
 export const GenealogyDashboardApi = {
   summary: () => request.get({ url: '/genealogy/dashboard/summary' })
+}
+
+export const GenealogyShowcaseApi = {
+  home: () => request.get({ url: '/genealogy/showcase/home' }),
+  gallery: (limit?: number) => request.get({ url: '/genealogy/showcase/gallery', params: { limit } }),
+  calendar: (year?: number, month?: number) =>
+    request.get({ url: '/genealogy/showcase/calendar', params: { year, month } }),
+  deeds: () => request.get({ url: '/genealogy/showcase/deeds' }),
+  scholarshipWall: () => request.get({ url: '/genealogy/showcase/scholarship-wall' }),
+  search: (keyword: string) => request.get({ url: '/genealogy/showcase/search', params: { keyword } }),
+  relation: (fromId: number, toId: number) =>
+    request.get({ url: '/genealogy/showcase/relation', params: { fromId, toId } }),
+  miniFamily: (memberId: number) =>
+    request.get({ url: '/genealogy/showcase/mini-family', params: { memberId } }),
+  getConfig: () => request.get({ url: '/genealogy/showcase/config/get' }),
+  saveConfig: (data: any) => request.put({ url: '/genealogy/showcase/config/save', data })
 }
 
 export const GenealogyAiMatchApi = {

@@ -10,6 +10,14 @@
         <view>{{ a.school }} {{ a.major || '' }} {{ a.grade || '' }}</view>
         <view class="muted">{{ SCHOLARSHIP_TYPE[a.type] || '' }} · {{ a.year || '' }}</view>
         <view v-if="a.rejectReason" class="muted">驳回原因：{{ a.rejectReason }}</view>
+        <view v-if="opened?.id === a.id" class="steps">
+          <view class="muted" style="margin-bottom: 8rpx">审核进度</view>
+          <view v-for="step in opened.auditSteps || []" :key="step.level" class="step">
+            <view class="name">{{ step.name }}</view>
+            <view class="muted">{{ step.opinion || step.state || '' }} {{ step.remark || '' }}</view>
+          </view>
+          <view v-if="!(opened.auditSteps || []).length" class="muted">暂无审核节点</view>
+        </view>
         <button v-if="canWithdraw(a.status)" class="ghost" size="mini" @click.stop="withdraw(a)">撤回</button>
       </view>
       <view v-if="!list.length" class="muted empty">暂无申请记录</view>
@@ -26,6 +34,7 @@ import { SCHOLARSHIP_STATUS, SCHOLARSHIP_TYPE } from '@/utils'
 
 const logged = ref(isLoggedIn())
 const list = ref<any[]>([])
+const opened = ref<any>()
 const status = (s: number) => SCHOLARSHIP_STATUS[s] || '处理中'
 const canWithdraw = (s: number) => [1, 2, 10, 11, 12, 13].includes(s)
 const load = async () => {
@@ -37,12 +46,11 @@ const load = async () => {
   } catch {}
 }
 const open = async (row: any) => {
-  const d: any = await GenealogyScholarshipApi.get(row.id)
-  uni.showModal({
-    title: d.applyNo || '申请详情',
-    content: `${d.school} / ${d.major} / ${d.grade}\n学号 ${d.studentNo || ''}\n${d.familySituation || ''}${d.rejectReason ? '\n驳回：' + d.rejectReason : ''}`,
-    showCancel: false
-  })
+  if (opened.value?.id === row.id) {
+    opened.value = null
+    return
+  }
+  opened.value = await GenealogyScholarshipApi.get(row.id)
 }
 const withdraw = async (row: any) => {
   uni.showModal({
@@ -62,4 +70,6 @@ onShow(load)
 .between { display: flex; justify-content: space-between; align-items: center; }
 .ghost { background: #fffdf7; color: #a63d2f; border: 1px solid #e8dfcc; margin-top: 16rpx; }
 .empty { text-align: center; padding: 80rpx 0; }
+.steps { margin-top: 16rpx; padding-top: 12rpx; border-top: 1px dashed #e8dfcc; }
+.step { padding: 8rpx 0; }
 </style>

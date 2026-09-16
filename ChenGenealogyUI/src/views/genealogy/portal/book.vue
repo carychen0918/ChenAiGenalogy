@@ -298,15 +298,24 @@ onMounted(async () => {
 })
 </script>
 <style scoped>
-.book-page { max-width: 1480px; margin: 0 auto; }
-.toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.book-page {
+  max-width: 1480px;
+  width: 100%;
+  margin: 0 auto;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; flex-shrink: 0; }
 .title { font-size: 22px; font-weight: 700; }
 .actions { display: flex; gap: 8px; flex-wrap: wrap; }
-.hits { margin-bottom: 12px; }
+.hits { margin-bottom: 12px; flex-shrink: 0; }
 .book-frame {
   display: flex;
   outline: none;
-  min-height: 640px;
+  flex: 1;
+  min-height: 0;
 }
 .spine {
   width: 14px;
@@ -318,7 +327,7 @@ onMounted(async () => {
   flex: 1;
   perspective: 1800px;
   position: relative;
-  min-height: 640px;
+  min-height: 0;
   overflow: hidden;
 }
 .sheet {
@@ -327,7 +336,9 @@ onMounted(async () => {
   border-left: none;
   padding: 36px 40px 48px;
   color: #3a3126;
-  min-height: 640px;
+  position: relative;
+  height: 100%;
+  overflow: auto;
   box-sizing: border-box;
   transform-origin: left center;
   backface-visibility: hidden;
@@ -357,7 +368,14 @@ onMounted(async () => {
   70% { transform: rotateY(140deg); }
   100% { transform: rotateY(180deg); }
 }
-.cover { text-align: center; padding: 80px 20px 40px; }
+.cover {
+  text-align: center;
+  min-height: calc(100% - 24px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40px 20px;
+}
 .cover-en { letter-spacing: 8px; color: #a63d2f; font-size: 12px; }
 .cover-title { font-size: 40px; font-weight: 700; margin: 24px 0 16px; letter-spacing: 8px; }
 .cover-line { width: 80px; height: 2px; background: #a63d2f; margin: 0 auto 24px; }
@@ -380,16 +398,23 @@ onMounted(async () => {
 .deed { margin-bottom: 8px; }
 .deed-title { font-weight: 600; }
 .folio { position: absolute; right: 24px; bottom: 16px; color: #8b8273; font-size: 13px; }
-.sheet { position: relative; }
 .pager-bar {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 24px;
   margin-top: 16px;
+  flex-shrink: 0;
 }
 .pager-text { color: #8b8273; min-width: 140px; text-align: center; }
-.gate { text-align: center; padding: 120px 20px; }
+.gate {
+  text-align: center;
+  min-height: calc(100% - 24px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40px 20px;
+}
 .paper-title { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
 .toc-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0e6d4; cursor: pointer; }
 .toc-item.on { color: #a63d2f; font-weight: 700; }

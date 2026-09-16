@@ -7,6 +7,8 @@ interface ImportMetaEnv {
   readonly VITE_APP_TENANT_ENABLE: string
   readonly VITE_APP_CAPTCHA_ENABLE: string
   readonly VITE_APP_TENANT_ID: string
+  readonly VITE_AMAP_KEY: string
+  readonly VITE_AMAP_SECRET: string
 }
 
 interface ImportMeta {

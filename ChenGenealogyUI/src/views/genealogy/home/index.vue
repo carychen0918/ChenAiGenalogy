@@ -70,6 +70,30 @@
       </section>
     </div>
 
+    <div class="panels">
+      <section class="panel living-panel">
+        <div class="panel-h">前台客厅预览 <span>CLAN HALL</span></div>
+        <div class="living">
+          <div>
+            <div class="kicker">FEATURED</div>
+            <div class="ritual-title">{{ showcase.featuredPerson?.name || '自动选取人物' }}</div>
+            <div class="todo-time">{{ showcase.featuredPerson?.source }} · 族影 {{ n(showcase.galleryTotal) }} · 事迹 {{ n(showcase.deedTotal) }}</div>
+          </div>
+          <div>
+            <div class="kicker">CALENDAR</div>
+            <div v-for="c in (showcase.calendar || []).slice(0, 4)" :key="c.title + c.date" class="todo-time">{{ String(c.date || '').slice(0, 10) }} · {{ c.title }}</div>
+            <div v-if="!(showcase.calendar || []).length" class="empty">日历暂无事项</div>
+          </div>
+          <div>
+            <div class="kicker">SCHOLAR WALL</div>
+            <div v-for="w in (showcase.scholarshipWall || []).slice(0, 4)" :key="w.applicationId" class="todo-time">{{ w.name }} · {{ w.year }}</div>
+            <div v-if="!(showcase.scholarshipWall || []).length" class="empty">榜样墙待发放后展示</div>
+          </div>
+        </div>
+        <button class="todo" @click="router.push('/genealogy/worship/content')">去内容管理 → 前台客厅：置顶人物 / 事迹 / 日历成员</button>
+      </section>
+    </div>
+
     <div class="links">
       <button v-for="l in (summary.links || [])" :key="l.route" class="hex" @click="router.push(l.route)">
         <div class="hex-label">{{ l.label }}</div>
@@ -79,11 +103,12 @@
   </div>
 </template>
 <script setup lang="ts">
-import { GenealogyDashboardApi } from '@/api/genealogy'
+import { GenealogyDashboardApi, GenealogyShowcaseApi } from '@/api/genealogy'
 
 defineOptions({ name: 'GenealogyHome' })
 const router = useRouter()
 const summary = ref<any>({})
+const showcase = ref<any>({})
 const clock = ref('')
 let timer: ReturnType<typeof setInterval>
 const n = (v: any) => (v == null ? 0 : v)
@@ -132,6 +157,11 @@ onMounted(async () => {
     summary.value = (await GenealogyDashboardApi.summary()) || {}
   } catch {
     summary.value = {}
+  }
+  try {
+    showcase.value = (await GenealogyShowcaseApi.home()) || {}
+  } catch {
+    showcase.value = {}
   }
 })
 onUnmounted(() => timer && clearInterval(timer))
@@ -188,6 +218,8 @@ onUnmounted(() => timer && clearInterval(timer))
 .tr { top: 10px; right: 10px; border-left: 0; border-bottom: 0; }
 .bl { bottom: 10px; left: 10px; border-right: 0; border-top: 0; }
 .br { bottom: 10px; right: 10px; border-left: 0; border-top: 0; }
+.living-panel { grid-column: 1 / -1; min-height: auto; }
+.living { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 .hero, .alerts, .kpis, .panels, .links { position: relative; z-index: 1; }
 .hero { display: flex; justify-content: space-between; gap: 16px; align-items: flex-end; margin-bottom: 22px; }
 .kicker { letter-spacing: 4px; color: var(--cyan); font-size: 11px; margin-bottom: 8px; }
@@ -269,5 +301,6 @@ h1 { margin: 0; font-size: 32px; letter-spacing: 6px; font-weight: 700; color: #
 @media (max-width: 1200px) {
   .kpis, .links { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .panels { grid-template-columns: 1fr; }
+  .living { grid-template-columns: 1fr; }
 }
 </style>

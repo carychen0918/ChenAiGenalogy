@@ -42,7 +42,7 @@
         <text class="more" @click="go('/pages/gallery/gallery')">全部</text>
       </view>
       <view class="photos">
-        <image v-for="(g, i) in home.gallery" :key="g.url + i" :src="g.url" class="photo" mode="aspectFill" @click="preview(home.gallery, i)" />
+        <image v-for="(g, i) in home.gallery" :key="g.url + i" :src="g.url" class="photo" mode="aspectFit" @click="preview(home.gallery, i)" />
       </view>
     </view>
 
@@ -195,5 +195,5 @@ onShow(async () => {
 .avatar { width: 140rpx; height: 168rpx; border-radius: 12rpx; background: #f4ece0; }
 .intro { margin-top: 8rpx; }
 .photos { display: flex; flex-wrap: wrap; gap: 12rpx; margin-top: 12rpx; }
-.photo { width: 140rpx; height: 140rpx; border-radius: 8rpx; background: #f4ece0; }
+.photo { width: 140rpx; height: 168rpx; border-radius: 8rpx; background: #f4ece0; }
 </style>

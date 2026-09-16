@@ -49,7 +49,7 @@
             v-for="(g, i) in (home.gallery || []).slice(0, 8)"
             :key="g.url + i"
             :src="g.url"
-            fit="cover"
+            fit="contain"
             preview-teleported
             :preview-src-list="(home.gallery || []).map((x: any) => x.url)"
             :initial-index="i"
@@ -250,7 +250,8 @@ onMounted(async () => {
 .sub { color: #8b8273; font-size: 13px; margin: 6px 0 8px; }
 .person-meta p { margin: 0; font-size: 13px; line-height: 1.7; color: #5c5348; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 .gallery { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; flex: 1; }
-.gallery :deep(.el-image) { width: 100%; height: 78px; border-radius: 8px; overflow: hidden; background: #efe7d6; }
+.gallery :deep(.el-image) { width: 100%; height: 132px; border-radius: 8px; overflow: hidden; background: #efe7d6; }
+.gallery :deep(.el-image img) { object-fit: contain; }
 .thumb-fallback { width: 100%; height: 100%; background: #efe7d6; }
 .quiet { flex: 1; display: flex; align-items: center; justify-content: center; color: #8b8273; font-size: 13px; background: #f8f3e8; border-radius: 8px; min-height: 120px; }
 .mods { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }

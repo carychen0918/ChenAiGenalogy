@@ -3,7 +3,7 @@
     <view class="muted hint">点击照片查看大图，点姓名进档案</view>
     <view class="grid">
       <view class="item" v-for="(g, i) in list" :key="g.url + i">
-        <image :src="g.url" class="img" mode="aspectFill" @click="preview(i)" />
+        <image :src="g.url" class="img" mode="aspectFit" @click="preview(i)" />
         <view class="name" @click="goMember(g)">{{ g.memberName }}</view>
       </view>
     </view>
@@ -30,7 +30,7 @@ onLoad(async () => {
 .hint { margin-bottom: 16rpx; }
 .grid { display: flex; flex-wrap: wrap; gap: 16rpx; }
 .item { width: calc(33.33% - 12rpx); background: #fffdf7; border: 1px solid #e8dfcc; border-radius: 12rpx; overflow: hidden; }
-.img { width: 100%; height: 180rpx; background: #f4ece0; }
+.img { width: 100%; height: 240rpx; background: #f4ece0; }
 .name { font-size: 22rpx; padding: 8rpx; }
 .empty { text-align: center; padding: 80rpx 0; }
 </style>

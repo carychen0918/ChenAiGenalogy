@@ -4,7 +4,7 @@
     <div class="text-13px text-gray-500 mb-16px">汇聚成员头像与照片集，点击进入档案。不改动原图数据。</div>
     <div class="grid">
       <div v-for="(g, i) in list" :key="g.url + i" class="item" @click="go(g)">
-        <el-image :src="g.url" fit="cover" class="img" :preview-src-list="urls" :initial-index="i" preview-teleported @click.stop />
+        <el-image :src="g.url" fit="contain" class="img" :preview-src-list="urls" :initial-index="i" preview-teleported @click.stop />
         <div class="name">{{ g.memberName }}</div>
       </div>
     </div>
@@ -27,6 +27,7 @@ onMounted(async () => {
 <style scoped>
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px; }
 .item { background: #fffdf7; border: 1px solid #e8dfcc; border-radius: 12px; overflow: hidden; cursor: pointer; }
-.img { width: 100%; height: 140px; }
+.img { width: 100%; height: 180px; background: #efe7d6; }
+.img :deep(img) { object-fit: contain; }
 .name { padding: 8px 10px; font-size: 13px; }
 </style>

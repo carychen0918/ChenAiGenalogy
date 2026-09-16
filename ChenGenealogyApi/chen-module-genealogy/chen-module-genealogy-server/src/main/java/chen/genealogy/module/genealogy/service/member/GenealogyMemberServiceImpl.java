@@ -686,6 +686,9 @@ public class GenealogyMemberServiceImpl implements MemberService {
         vo.setGenerationNo(m.getGenerationNo());
         vo.setAvatar(m.getAvatar());
         vo.setAlive(m.getAlive());
+        vo.setFatherId(m.getFatherId());
+        vo.setBirthDate(m.getBirthDate());
+        vo.setDeathDate(m.getDeathDate());
         if (m.getGenerationId() != null) {
             GenerationDO gen = generationMapper.selectById(m.getGenerationId());
             if (gen != null) {
@@ -708,6 +711,10 @@ public class GenealogyMemberServiceImpl implements MemberService {
         vo.setGenerationNationalSource(m.getGenerationNationalSource());
         vo.setAvatar(m.getAvatar());
         vo.setAlive(m.getAlive());
+        vo.setFatherId(m.getFatherId());
+        vo.setFatherName(m.getFatherName());
+        vo.setBirthDate(m.getBirthDate());
+        vo.setDeathDate(m.getDeathDate());
         return vo;
     }
 

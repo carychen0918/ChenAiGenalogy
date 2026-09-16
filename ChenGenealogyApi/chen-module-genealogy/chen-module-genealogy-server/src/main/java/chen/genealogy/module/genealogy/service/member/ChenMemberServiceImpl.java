@@ -121,7 +121,15 @@ public class ChenMemberServiceImpl implements ChenMemberService {
 
     @Override
     public List<MemberSimpleVO> getSimpleList() {
-        return memberMapper.selectListByFamilyId(DEFAULT_FAMILY_ID).stream().map(this::toSimple).collect(Collectors.toList());
+        List<MemberDO> all = memberMapper.selectListByFamilyId(DEFAULT_FAMILY_ID);
+        Map<Long, String> names = all.stream().collect(Collectors.toMap(MemberDO::getId, MemberDO::getName, (a, b) -> a));
+        return all.stream().map(m -> {
+            MemberSimpleVO vo = toSimple(m);
+            if (m.getFatherId() != null) {
+                vo.setFatherName(names.get(m.getFatherId()));
+            }
+            return vo;
+        }).collect(Collectors.toList());
     }
 
     @Override
@@ -481,6 +489,9 @@ public class ChenMemberServiceImpl implements ChenMemberService {
         vo.setGenerationNo(m.getGenerationNo());
         vo.setAvatar(m.getAvatar());
         vo.setAlive(m.getAlive());
+        vo.setFatherId(m.getFatherId());
+        vo.setBirthDate(m.getBirthDate());
+        vo.setDeathDate(m.getDeathDate());
         if (m.getGenerationId() != null) {
             GenerationDO gen = generationMapper.selectById(m.getGenerationId());
             if (gen != null) {

@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -19,4 +21,8 @@ public class MemberSimpleVO {
     private String generationNationalSource;
     private String avatar;
     private Boolean alive;
+    private Long fatherId;
+    private String fatherName;
+    private LocalDateTime birthDate;
+    private LocalDateTime deathDate;
 }

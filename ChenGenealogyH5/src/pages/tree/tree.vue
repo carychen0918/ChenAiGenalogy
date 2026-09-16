@@ -8,6 +8,45 @@
           <button class="mini" @click="locateMe">定位我</button>
         </view>
       </view>
+      <view class="card seek">
+        <view class="seek-head">
+          <text class="seek-title">寻根</text>
+          <text class="muted">同名会显示几世、父亲、生卒</text>
+        </view>
+        <input v-model="seekKw" placeholder="输入姓名选择成员" confirm-type="search" />
+        <view v-if="seekHits.length" class="seek-hits">
+          <view
+            v-for="m in seekHits"
+            :key="m.id"
+            class="seek-hit"
+            :class="{ on: Number(seekId) === Number(m.id) }"
+            @click="pickSeek(m)"
+          >
+            {{ lineagePickLabel(m, memberById) }}
+          </view>
+        </view>
+        <view v-else-if="seekKw.trim()" class="muted empty-hit">未找到匹配成员</view>
+        <view v-if="pickedSeek" class="picked">已选：{{ lineagePickLabel(pickedSeek, memberById) }}</view>
+        <view class="acts">
+          <button class="mini" :disabled="!seekId" @click="seekRoot()">寻根</button>
+          <button v-if="lineageIds.length" class="mini ghost" @click="clearLineage">清除高亮</button>
+        </view>
+      </view>
+      <view v-if="lineagePath.length" class="card path lineage">
+        <view class="muted">直系寻根</view>
+        <view class="chain">
+          <view
+            v-for="(m, i) in lineagePath"
+            :key="m.id"
+            class="chain-item"
+            :class="{ now: Number(m.id) === Number(lineageNowId) }"
+            @click="scrollToMember(m.id)"
+          >
+            <view v-if="i" class="chain-line" />
+            <text>{{ m.generationNo ? m.generationNo + '世 · ' : '' }}{{ m.name }}</text>
+          </view>
+        </view>
+      </view>
       <view v-if="path.length" class="card path">
         <view class="muted">关系路径</view>
         <view class="hops">
@@ -16,7 +55,7 @@
       </view>
       <view v-if="kw">
         <view class="card member" v-for="m in filtered" :key="m.id" @click="openCard(m)">
-          {{ m.name }} · {{ formatMemberGeneration(m) }}
+          {{ lineagePickLabel(m, memberById) }}
         </view>
         <view v-if="!filtered.length" class="muted empty">未找到成员</view>
       </view>
@@ -24,7 +63,19 @@
         <view v-for="gen in grouped" :key="gen.no" class="gen">
           <view class="muted gen-title">{{ gen.no }}世{{ gen.words ? ' · ' + gen.words : '' }}</view>
           <view class="wrap">
-            <view class="node card" :class="{ me: meId && Number(m.id) === Number(meId) }" v-for="m in gen.nodes" :key="m.id" @click="openCard(m)">
+            <view
+              class="node card"
+              :id="'node-' + m.id"
+              :class="{
+                me: meId && Number(m.id) === Number(meId),
+                lineage: isLineage(m.id),
+                'lineage-self': Number(m.id) === Number(lineageSelfId),
+                'lineage-now': Number(m.id) === Number(lineageNowId)
+              }"
+              v-for="m in gen.nodes"
+              :key="m.id"
+              @click="openCard(m)"
+            >
               <image v-if="m.avatar" class="node-avatar" :src="m.avatar" mode="aspectFill" />
               <view v-else class="node-fallback">{{ m.name?.[0] }}</view>
               <view class="name">{{ m.name }}</view>
@@ -53,18 +104,26 @@
           <image v-for="(p, i) in card.photoUrls.slice(0, 6)" :key="p + i" :src="p" class="photo" mode="aspectFill" @click="previewCard(i)" />
         </view>
         <button class="btn" @click="openDetail">查看详情</button>
+        <button class="btn ghost" v-if="card?.id" @click="seekFromCard">从此人寻根</button>
         <button class="btn ghost" v-if="meId && card?.id && Number(card.id) !== Number(meId)" @click="showRelation">查看与我的关系</button>
       </view>
     </view>
   </view>
 </template>
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import GuestLogin from '@/components/guest-login.vue'
 import { GenealogyMemberApi, GenealogyShowcaseApi } from '@/api/genealogy'
 import { isLoggedIn } from '@/utils/auth'
-import { formatGenerationWord, formatLifeSpan, formatMemberGeneration, isSpouseOnlyMember } from '@/utils'
+import {
+  formatGenerationWord,
+  formatLifeSpan,
+  formatMemberGeneration,
+  isSpouseOnlyMember,
+  lineagePickLabel,
+  paternalLineage
+} from '@/utils'
 
 const logged = ref(isLoggedIn())
 const loading = ref(false)
@@ -76,6 +135,28 @@ const meId = ref<number>()
 const path = ref<any[]>([])
 const cardVisible = ref(false)
 const card = ref<any>()
+const seekKw = ref('')
+const seekId = ref<number>()
+const lineageIds = ref<number[]>([])
+const lineageNowId = ref<number | null>(null)
+const lineageSelfId = ref<number | null>(null)
+const lineagePath = ref<any[]>([])
+let seekSeq = 0
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+const memberById = computed(() => {
+  const map = new Map<number, any>()
+  ;[...list.value, ...all.value].forEach((m) => map.set(Number(m.id), m))
+  return map
+})
+const seekPool = computed(() => (list.value.length ? list.value : all.value).filter((m) => m?.id && m.name && !isSpouseOnlyMember(m)))
+const seekHits = computed(() => {
+  const q = seekKw.value.trim()
+  if (!q) return []
+  return seekPool.value.filter((m) => lineagePickLabel(m, memberById.value).includes(q) || m.name?.includes(q)).slice(0, 20)
+})
+const pickedSeek = computed(() => (seekId.value ? memberById.value.get(Number(seekId.value)) : null))
+const isLineage = (id: number) => lineageIds.value.includes(Number(id))
 const grouped = computed(() => {
   const map = new Map<number, any>()
   list.value
@@ -140,6 +221,67 @@ const showRelation = async () => {
     uni.showToast({ title: '请登录后查看关系', icon: 'none' })
   }
 }
+const pickSeek = (m: any) => {
+  seekId.value = Number(m.id)
+  seekKw.value = m.name || ''
+}
+const clearLineage = () => {
+  seekSeq += 1
+  lineageIds.value = []
+  lineageNowId.value = null
+  lineageSelfId.value = null
+  lineagePath.value = []
+}
+const scrollToMember = (id: number | string) => {
+  nextTick(() => {
+    const q = uni.createSelectorQuery()
+    q.select('#node-' + id).boundingClientRect()
+    q.selectViewport().scrollOffset()
+    q.exec((res: any[]) => {
+      const rect = res?.[0]
+      const scroll = res?.[1]
+      if (!rect || !scroll) return
+      uni.pageScrollTo({ scrollTop: Math.max(0, scroll.scrollTop + rect.top - 140), duration: 280 })
+    })
+  })
+}
+const seekRoot = async (id?: number) => {
+  const target = typeof id === 'number' ? id : seekId.value
+  if (!target) {
+    uni.showToast({ title: '请先选择成员', icon: 'none' })
+    return
+  }
+  kw.value = ''
+  hits.value = []
+  const pool = list.value.length ? list.value : all.value
+  const chain = paternalLineage(target, pool)
+  if (!chain.length) {
+    uni.showToast({ title: '谱上未找到该成员', icon: 'none' })
+    return
+  }
+  const seq = ++seekSeq
+  seekId.value = Number(target)
+  seekKw.value = ''
+  lineageSelfId.value = Number(target)
+  lineagePath.value = chain
+  lineageIds.value = []
+  lineageNowId.value = null
+  await nextTick()
+  for (const m of chain) {
+    if (seq !== seekSeq) return
+    lineageIds.value = [...lineageIds.value, Number(m.id)]
+    lineageNowId.value = Number(m.id)
+    scrollToMember(m.id)
+    await wait(520)
+  }
+  if (seq !== seekSeq) return
+  lineageNowId.value = null
+}
+const seekFromCard = async () => {
+  if (!card.value?.id) return
+  cardVisible.value = false
+  await seekRoot(Number(card.value.id))
+}
 
 onShow(async () => {
   logged.value = isLoggedIn()
@@ -153,7 +295,7 @@ onShow(async () => {
   try {
     const me = await GenealogyMemberApi.me().catch(() => null)
     meId.value = me?.id
-    list.value = (await GenealogyMemberApi.tree()) || []
+    list.value = (await GenealogyMemberApi.tree({ up: 30, down: 30 })) || []
     all.value = (await GenealogyMemberApi.simpleList()) || list.value
   } catch {
     list.value = []
@@ -163,12 +305,27 @@ onShow(async () => {
 })
 </script>
 <style scoped>
-.search input { background: #f4ece0; border-radius: 12rpx; padding: 18rpx 20rpx; }
-.acts { margin-top: 16rpx; }
+.search input, .seek input { background: #f4ece0; border-radius: 12rpx; padding: 18rpx 20rpx; }
+.acts { margin-top: 16rpx; display: flex; gap: 12rpx; }
 .mini { background: #a63d2f; color: #fff; font-size: 24rpx; }
+.mini[disabled] { opacity: 0.45; }
+.mini.ghost { background: #fffdf7; color: #a63d2f; border: 1px solid #e8dfcc; }
+.seek-head { display: flex; align-items: baseline; gap: 12rpx; margin-bottom: 12rpx; }
+.seek-title { font-weight: 700; color: #a63d2f; }
+.seek-hits { margin-top: 12rpx; max-height: 360rpx; overflow: auto; }
+.seek-hit { padding: 16rpx 8rpx; border-bottom: 1px solid #eadfcb; font-size: 26rpx; color: #3d3428; }
+.seek-hit.on { color: #a63d2f; font-weight: 700; background: #fff5f2; }
+.empty-hit { padding: 16rpx 0; }
+.picked { margin-top: 12rpx; color: #a63d2f; font-size: 24rpx; }
 .path .hops { display: flex; flex-wrap: wrap; gap: 8rpx; margin-top: 8rpx; }
 .hop { background: #f4e3de; color: #a63d2f; padding: 4rpx 12rpx; border-radius: 999rpx; font-size: 24rpx; }
-.node.me { border-color: #a63d2f; background: #fff5f2; }
+.chain { margin-top: 8rpx; }
+.chain-item { color: #a63d2f; font-weight: 700; font-size: 26rpx; }
+.chain-item.now { font-size: 28rpx; }
+.chain-line { width: 4rpx; height: 22rpx; background: #a63d2f; margin: 4rpx 0 4rpx 18rpx; border-radius: 4rpx; }
+.node.me, .node.lineage { border-color: #a63d2f; background: #fff5f2; }
+.node.lineage-self { box-shadow: 0 0 0 4rpx rgba(166, 61, 47, 0.35); }
+.node.lineage-now { transform: scale(1.03); }
 .btn.ghost { background: #fffdf7; color: #a63d2f; border: 1px solid #e8dfcc; }
 .member { margin-bottom: 16rpx; }
 .gen { margin-bottom: 16rpx; }
